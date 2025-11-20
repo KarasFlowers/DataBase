@@ -1,4 +1,4 @@
-package com.campusdelivery.model;
+package com.campusdelivery.entity;
 
 import java.util.Date;
 

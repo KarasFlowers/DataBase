@@ -97,3 +97,85 @@ CREATE TABLE reviews (
     FOREIGN KEY (order_id) REFERENCES orders(order_id),
     FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
+
+-- Triggers for merchant rating update
+DELIMITER //
+
+CREATE TRIGGER update_merchant_rating_on_review_insert
+AFTER INSERT ON reviews
+FOR EACH ROW
+BEGIN
+    DECLARE merchant_id_val INT;
+
+    -- Get the merchant_id from the order associated with the new review
+    SELECT o.merchant_id INTO merchant_id_val
+    FROM orders o
+    WHERE o.order_id = NEW.order_id;
+
+    -- Recalculate and update the merchant's rating
+    UPDATE merchants m
+    SET m.rating = (
+        SELECT AVG(r.rating)
+        FROM reviews r
+        JOIN orders o2 ON r.order_id = o2.order_id
+        WHERE o2.merchant_id = merchant_id_val
+    )
+    WHERE m.merchant_id = merchant_id_val;
+END;
+//
+
+CREATE TRIGGER update_merchant_rating_on_review_update
+AFTER UPDATE ON reviews
+FOR EACH ROW
+BEGIN
+    DECLARE merchant_id_val INT;
+
+    -- Get the merchant_id from the order associated with the updated review
+    SELECT o.merchant_id INTO merchant_id_val
+    FROM orders o
+    WHERE o.order_id = NEW.order_id;
+
+    -- Recalculate and update the merchant's rating
+    UPDATE merchants m
+    SET m.rating = (
+        SELECT AVG(r.rating)
+        FROM reviews r
+        JOIN orders o2 ON r.order_id = o2.order_id
+        WHERE o2.merchant_id = merchant_id_val
+    )
+    WHERE m.merchant_id = merchant_id_val;
+END;
+//
+
+-- Stored Procedure to get user orders by date range
+CREATE PROCEDURE get_user_orders_by_date_range(
+    IN p_user_id INT,
+    IN p_start_date DATETIME,
+    IN p_end_date DATETIME
+)
+BEGIN
+    SELECT
+        o.order_id,
+        o.user_id,
+        o.merchant_id,
+        o.address_id,
+        o.order_time,
+        o.total_price,
+        o.status,
+        m.name AS merchant_name,
+        a.address_details AS delivery_address
+    FROM
+        orders o
+    JOIN
+        merchants m ON o.merchant_id = m.merchant_id
+    JOIN
+        addresses a ON o.address_id = a.address_id
+    WHERE
+        o.user_id = p_user_id
+        AND o.order_time BETWEEN p_start_date AND p_end_date
+    ORDER BY
+        o.order_time DESC;
+END;
+//
+
+DELIMITER ;

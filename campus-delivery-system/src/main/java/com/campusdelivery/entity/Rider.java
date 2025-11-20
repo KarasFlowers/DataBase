@@ -1,4 +1,4 @@
-package com.campusdelivery.model;
+package com.campusdelivery.entity;
 
 public class Rider {
     private int riderId;

@@ -22,17 +22,20 @@ campus-delivery-system/
     │   │   └── com/
     │   │       └── campusdelivery/
     │   │           ├── config/
-    │   │           │   └── DatabaseConnector.java  # Handles database connection logic
+    │   │           │   └── DataSourceConfig.java  # Handles database connection logic
     │   │           │
     │   │           ├── dao/
     │   │           │   ├── UserDao.java          # Data Access Object for the User entity
     │   │           │   └── ... (Other DAOs for each entity)
     │   │           │
-    │   │           └── model/
-    │   │               ├── User.java             # Model (POJO) for the User entity
-    │   │               └── ... (Other Models for each entity)
+    │   │           ├── model/
+    │   │           │   ├── User.java             # Model (POJO) for the User entity
+    │   │           │   └── ... (Other Models for each entity)
+    │   │           │
+    │   │           └── CampusDeliverySystemApplication.java # Main Spring Boot application class
     │   │
-    │   └── resources/                # For configuration files or other non-java resources
+    │   └── resources/
+    │       └── application.properties  # For configuration files or other non-java resources
     │
     └── test/
         └── java/                     # Contains unit tests for the project
@@ -42,9 +45,9 @@ campus-delivery-system/
 
 *   **`schema.sql`**: The blueprint for your database. Run this script to create all the necessary tables.
 *   **`pom.xml`**: The Maven Project Object Model file. It manages project dependencies (like the MySQL JDBC driver) and defines how to build the project.
-*   **`src/main/java/com/campusdelivery/model`**: This package contains the Model classes, also known as Plain Old Java Objects (POJOs). Each class (e.g., `User.java`, `Order.java`) is a simple data structure that represents a row in a database table.
-*   **`src/main/java/com/campusdelivery/dao`**: This package holds the Data Access Object (DAO) classes. Each DAO (e.g., `UserDao.java`) is responsible for all database operations (Create, Read, Update, Delete) for its corresponding model. **This is where the raw SQL queries are written and executed.**
-*   **`src/main/java/com/campusdelivery/config`**: This package is for configuration-related classes. `DatabaseConnector.java` is a key utility here, providing a standardized way to get a connection to the database.
+*   **`src/main/java/com/src.main.campusdelivery/model`**: This package contains the Model classes, also known as Plain Old Java Objects (POJOs). Each class (e.g., `User.java`, `Order.java`) is a simple data structure that represents a row in a database table.
+*   **`src/main/java/com/src.main.campusdelivery/dao`**: This package holds the Data Access Object (DAO) classes. Each DAO (e.g., `UserDao.java`) is responsible for all database operations (Create, Read, Update, Delete) for its corresponding model. **This is where the raw SQL queries are written and executed.**
+*   **`src/main/java/com/campusdelivery/config`**: This package is for configuration-related classes. `DataSourceConfig.java` is a key utility here, providing a standardized way to get a connection to the database, configured via `src/main/resources/application.properties`.
 
 ## 3. How to Set Up and Run
 
@@ -54,8 +57,8 @@ campus-delivery-system/
 3.  Execute the queries in the `schema.sql` script against your new database to create the required tables.
 
 ### Step 2: Configure Database Connection
-1.  Navigate to `src/main/java/com/campusdelivery/config/DatabaseConnector.java`.
-2.  Update the `URL`, `USER`, and `PASSWORD` constants with your specific database host, username, and password.
+1.  Navigate to `src/main/resources/application.properties`.
+2.  Update the `spring.datasource.url`, `spring.datasource.username`, and `spring.datasource.password` properties with your specific database host, username, and password.
 
 ### Step 3: Build the Project
 1.  Ensure you have Apache Maven installed on your system.
@@ -64,4 +67,8 @@ campus-delivery-system/
 
 ## 4. Next Steps
 
-The project skeleton is now complete. The next logical step is to implement the placeholder methods in the **DAO classes**. This involves writing the JDBC and SQL code to perform the create, read, update, and delete operations for each entity.
+The project skeleton is now complete and all DAO methods have been implemented. You can now build and run the application.
+To run the application:
+1.  Ensure the database is set up and configured as per Step 1 and 2.
+2.  Build the project using `mvn clean install` (Step 3).
+3.  Run the Spring Boot application: `mvn spring-boot:run`.

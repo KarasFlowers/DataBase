@@ -1,36 +1,209 @@
 package com.campusdelivery.dao;
 
-import com.campusdelivery.model.Order;
+import com.campusdelivery.entity.Order;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+
+import javax.sql.DataSource;
+import java.sql.*;
+import java.util.ArrayList;
 import java.util.List;
 
+@Repository
 public class OrderDao {
 
+    @Autowired
+    private DataSource dataSource;
+
     public int createOrder(Order order) {
-        // TODO: Implement SQL INSERT and return generated order_id
-        System.out.println("DAO: Creating order for user " + order.getUserId());
-        return 0; // Return the new order ID
+        String sql = "INSERT INTO orders (user_id, merchant_id, address_id, total_price, status) VALUES (?, ?, ?, ?, ?)";
+        int orderId = 0;
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            pstmt.setInt(1, order.getUserId());
+            pstmt.setInt(2, order.getMerchantId());
+            pstmt.setInt(3, order.getAddressId());
+            pstmt.setBigDecimal(4, order.getTotalPrice());
+            pstmt.setString(5, order.getStatus());
+            int affectedRows = pstmt.executeUpdate();
+            if (affectedRows > 0) {
+                try (ResultSet generatedKeys = pstmt.getGeneratedKeys()) {
+                    if (generatedKeys.next()) {
+                        orderId = generatedKeys.getInt(1);
+                    }
+                }
+                System.out.println("DAO: Successfully created order with ID " + orderId);
+            } else {
+                System.out.println("DAO: Failed to create order for user ID " + order.getUserId());
+            }
+        } catch (SQLException e) {
+            System.err.println("DAO Error: Failed to create order for user ID " + order.getUserId());
+            e.printStackTrace();
+        }
+        return orderId;
     }
 
     public Order getOrderById(int orderId) {
-        // TODO: Implement SQL SELECT by ID
-        System.out.println("DAO: Getting order by ID " + orderId);
-        return null;
+        String sql = "SELECT * FROM orders WHERE order_id = ?";
+        Order order = null;
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, orderId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    order = new Order();
+                    order.setOrderId(rs.getInt("order_id"));
+                    order.setUserId(rs.getInt("user_id"));
+                    order.setMerchantId(rs.getInt("merchant_id"));
+                    order.setAddressId(rs.getInt("address_id"));
+                    order.setOrderTime(rs.getTimestamp("order_time"));
+                    order.setTotalPrice(rs.getBigDecimal("total_price"));
+                    order.setStatus(rs.getString("status"));
+                    System.out.println("DAO: Found order by ID " + orderId);
+                } else {
+                    System.out.println("DAO: No order found with ID " + orderId);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("DAO Error: Failed to get order by ID " + orderId);
+            e.printStackTrace();
+        }
+        return order;
+    }
+
+    public List<Order> getAllOrders() {
+        String sql = "SELECT * FROM orders";
+        List<Order> orders = new ArrayList<>();
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
+            while (rs.next()) {
+                Order order = new Order();
+                order.setOrderId(rs.getInt("order_id"));
+                order.setUserId(rs.getInt("user_id"));
+                order.setMerchantId(rs.getInt("merchant_id"));
+                order.setAddressId(rs.getInt("address_id"));
+                order.setOrderTime(rs.getTimestamp("order_time"));
+                order.setTotalPrice(rs.getBigDecimal("total_price"));
+                order.setStatus(rs.getString("status"));
+                orders.add(order);
+            }
+            System.out.println("DAO: Retrieved " + orders.size() + " orders.");
+        } catch (SQLException e) {
+            System.err.println("DAO Error: Failed to get all orders.");
+            e.printStackTrace();
+        }
+        return orders;
     }
 
     public List<Order> getOrdersByUserId(int userId) {
-        // TODO: Implement SQL SELECT by user ID
-        System.out.println("DAO: Getting orders for user " + userId);
-        return null;
+        List<Order> orders = new ArrayList<>();
+        String sql = "SELECT * FROM orders WHERE user_id = ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, userId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    Order order = new Order();
+                    order.setOrderId(rs.getInt("order_id"));
+                    order.setUserId(rs.getInt("user_id"));
+                    order.setMerchantId(rs.getInt("merchant_id"));
+                    order.setAddressId(rs.getInt("address_id"));
+                    order.setOrderTime(rs.getTimestamp("order_time"));
+                    order.setTotalPrice(rs.getBigDecimal("total_price"));
+                    order.setStatus(rs.getString("status"));
+                    orders.add(order);
+                }
+                System.out.println("DAO: Retrieved " + orders.size() + " orders for user ID " + userId);
+            }
+        } catch (SQLException e) {
+            System.err.println("DAO Error: Failed to get orders for user ID " + userId);
+            e.printStackTrace();
+        }
+        return orders;
     }
     
     public List<Order> getOrdersByMerchantId(int merchantId) {
-        // TODO: Implement SQL SELECT by merchant ID
-        System.out.println("DAO: Getting orders for merchant " + merchantId);
-        return null;
+        List<Order> orders = new ArrayList<>();
+        String sql = "SELECT * FROM orders WHERE merchant_id = ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, merchantId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    Order order = new Order();
+                    order.setOrderId(rs.getInt("order_id"));
+                    order.setUserId(rs.getInt("user_id"));
+                    order.setMerchantId(rs.getInt("merchant_id"));
+                    order.setAddressId(rs.getInt("address_id"));
+                    order.setOrderTime(rs.getTimestamp("order_time"));
+                    order.setTotalPrice(rs.getBigDecimal("total_price"));
+                    order.setStatus(rs.getString("status"));
+                    orders.add(order);
+                }
+                System.out.println("DAO: Retrieved " + orders.size() + " orders for merchant ID " + merchantId);
+            }
+        } catch (SQLException e) {
+            System.err.println("DAO Error: Failed to get orders for merchant ID " + merchantId);
+            e.printStackTrace();
+        }
+        return orders;
+    }
+
+    public void updateOrder(Order order) {
+        String sql = "UPDATE orders SET user_id = ?, merchant_id = ?, address_id = ?, total_price = ?, status = ? WHERE order_id = ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, order.getUserId());
+            pstmt.setInt(2, order.getMerchantId());
+            pstmt.setInt(3, order.getAddressId());
+            pstmt.setBigDecimal(4, order.getTotalPrice());
+            pstmt.setString(5, order.getStatus());
+            pstmt.setInt(6, order.getOrderId());
+            int affectedRows = pstmt.executeUpdate();
+            if (affectedRows > 0) {
+                System.out.println("DAO: Successfully updated order with ID " + order.getOrderId());
+            } else {
+                System.out.println("DAO: No order found with ID " + order.getOrderId() + " to update.");
+            }
+        } catch (SQLException e) {
+            System.err.println("DAO Error: Failed to update order with ID " + order.getOrderId());
+            e.printStackTrace();
+        }
     }
 
     public void updateOrderStatus(int orderId, String status) {
-        // TODO: Implement SQL UPDATE for status
-        System.out.println("DAO: Updating order status for " + orderId);
+        String sql = "UPDATE orders SET status = ? WHERE order_id = ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, status);
+            pstmt.setInt(2, orderId);
+            int affectedRows = pstmt.executeUpdate();
+            if (affectedRows > 0) {
+                System.out.println("DAO: Successfully updated status for order ID " + orderId + " to " + status);
+            } else {
+                System.out.println("DAO: No order found with ID " + orderId + " to update status.");
+            }
+        } catch (SQLException e) {
+            System.err.println("DAO Error: Failed to update status for order ID " + orderId);
+            e.printStackTrace();
+        }
+    }
+
+    public void deleteOrder(int orderId) {
+        String sql = "DELETE FROM orders WHERE order_id = ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, orderId);
+            int affectedRows = pstmt.executeUpdate();
+            if (affectedRows > 0) {
+                System.out.println("DAO: Successfully deleted order with ID " + orderId);
+            } else {
+                System.out.println("DAO: No order found with ID " + orderId + " to delete.");
+            }
+        } catch (SQLException e) {
+            System.err.println("DAO Error: Failed to delete order with ID " + orderId);
+            e.printStackTrace();
+        }
     }
 }
