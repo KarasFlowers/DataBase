@@ -28,4 +28,8 @@ public class ReviewService {
     public void deleteReview(int reviewId) {
         reviewDao.deleteReview(reviewId);
     }
+
+    public List<Review> getReviewsByMerchantId(int merchantId) {
+        return reviewDao.getReviewsByMerchantId(merchantId);
+    }
 }

@@ -176,4 +176,36 @@ public class ReviewDao {
             e.printStackTrace();
         }
     }
+
+    public List<Review> getReviewsByMerchantId(int merchantId) {
+        List<Review> reviews = new ArrayList<>();
+        String sql = "SELECT r.*, u.username " +
+                     "FROM reviews r " +
+                     "JOIN orders o ON r.order_id = o.order_id " +
+                     "JOIN users u ON r.user_id = u.user_id " +
+                     "WHERE o.merchant_id = ? " +
+                     "ORDER BY r.review_time DESC";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, merchantId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    Review review = new Review();
+                    review.setReviewId(rs.getInt("review_id"));
+                    review.setOrderId(rs.getInt("order_id"));
+                    review.setUserId(rs.getInt("user_id"));
+                    review.setRating(rs.getInt("rating"));
+                    review.setComment(rs.getString("comment"));
+                    review.setReviewTime(rs.getTimestamp("review_time"));
+                    review.setUsername(rs.getString("username")); // Set the username
+                    reviews.add(review);
+                }
+                System.out.println("DAO: Retrieved " + reviews.size() + " reviews for merchant ID " + merchantId);
+            }
+        } catch (SQLException e) {
+            System.err.println("DAO Error: Failed to get reviews for merchant ID " + merchantId);
+            e.printStackTrace();
+        }
+        return reviews;
+    }
 }

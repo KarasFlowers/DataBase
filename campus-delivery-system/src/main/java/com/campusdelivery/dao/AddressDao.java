@@ -21,14 +21,14 @@ public class AddressDao {
 
     public void addAddress(Address address) {
         String sql = "INSERT INTO addresses (user_id, address_details, is_default) VALUES (?, ?, ?)";
-
+        //using try with resources, automatically close connection
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setInt(1, address.getUserId());
             pstmt.setString(2, address.getAddressDetails());
             pstmt.setBoolean(3, address.isDefault());
-            pstmt.executeUpdate();
+            pstmt.executeUpdate();//insert->executeUpdat
             System.out.println("DAO: Successfully added address for user " + address.getUserId());
 
         } catch (SQLException e) {
@@ -42,7 +42,7 @@ public class AddressDao {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, addressId);
-            ResultSet rs = pstmt.executeQuery();
+            ResultSet rs = pstmt.executeQuery();//select -> executeQuery
             if (rs.next()) {
                 Address address = new Address();
                 address.setAddressId(rs.getInt("address_id"));

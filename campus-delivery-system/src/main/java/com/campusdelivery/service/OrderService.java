@@ -29,7 +29,15 @@ public class OrderService {
         return orderDao.getOrdersByMerchantId(merchantId);
     }
 
+    public List<Order> getAllOrders() {
+        return orderDao.getAllOrders();
+    }
+
     public void updateOrderStatus(int orderId, String status) {
         orderDao.updateOrderStatus(orderId, status);
+    }
+
+    public List<Order> getOrdersByUserAndDateRange(int userId, java.util.Date startDate, java.util.Date endDate) {
+        return orderDao.getOrdersByUserAndDateRange(userId, startDate, endDate);
     }
 }

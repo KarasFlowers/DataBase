@@ -30,6 +30,12 @@ public class DeliveryRecordController {
         return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 
+    @GetMapping("/rider/{riderId}")
+    public ResponseEntity<java.util.List<DeliveryRecord>> getDeliveryRecordsByRiderId(@PathVariable int riderId) {
+        java.util.List<DeliveryRecord> records = deliveryRecordService.getDeliveryRecordsByRiderId(riderId);
+        return new ResponseEntity<>(records, HttpStatus.OK);
+    }
+
     @PutMapping
     public ResponseEntity<String> updateDeliveryRecord(@RequestBody DeliveryRecord deliveryRecord) {
         deliveryRecordService.updateDeliveryRecord(deliveryRecord);

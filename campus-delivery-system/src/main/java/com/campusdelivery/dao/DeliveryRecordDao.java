@@ -138,4 +138,30 @@ public class DeliveryRecordDao {
             e.printStackTrace();
         }
     }
+
+    public List<DeliveryRecord> getDeliveryRecordsByRiderId(int riderId) {
+        String sql = "SELECT * FROM delivery_records WHERE rider_id = ?";
+        List<DeliveryRecord> records = new ArrayList<>();
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, riderId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    DeliveryRecord record = new DeliveryRecord();
+                    record.setDeliveryId(rs.getInt("delivery_id"));
+                    record.setOrderId(rs.getInt("order_id"));
+                    record.setRiderId(rs.getInt("rider_id"));
+                    record.setStatus(rs.getString("status"));
+                    record.setPickupTime(rs.getTimestamp("pickup_time"));
+                    record.setDeliveryTime(rs.getTimestamp("delivery_time"));
+                    records.add(record);
+                }
+                System.out.println("DAO: Found " + records.size() + " delivery records for rider ID " + riderId);
+            }
+        } catch (SQLException e) {
+            System.err.println("DAO Error: Failed to get delivery records by rider ID " + riderId);
+            e.printStackTrace();
+        }
+        return records;
+    }
 }

@@ -37,6 +37,12 @@ public class ReviewController {
         return new ResponseEntity<>(reviews, HttpStatus.OK);
     }
 
+    @GetMapping("/merchant/{merchantId}")
+    public ResponseEntity<List<Review>> getReviewsByMerchantId(@PathVariable int merchantId) {
+        List<Review> reviews = reviewService.getReviewsByMerchantId(merchantId);
+        return new ResponseEntity<>(reviews, HttpStatus.OK);
+    }
+
     @DeleteMapping("/{reviewId}")
     public ResponseEntity<String> deleteReview(@PathVariable int reviewId) {
         reviewService.deleteReview(reviewId);

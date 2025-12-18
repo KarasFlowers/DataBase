@@ -9,6 +9,7 @@ public class Review {
     private int rating;
     private String comment;
     private Date reviewTime;
+    private String username; // To hold the username when joining tables
 
     public Review() {}
 
@@ -25,4 +26,6 @@ public class Review {
     public void setComment(String comment) { this.comment = comment; }
     public Date getReviewTime() { return reviewTime; }
     public void setReviewTime(Date reviewTime) { this.reviewTime = reviewTime; }
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
 }

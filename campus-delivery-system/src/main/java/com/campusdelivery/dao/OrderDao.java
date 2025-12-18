@@ -206,4 +206,34 @@ public class OrderDao {
             e.printStackTrace();
         }
     }
+
+    public List<Order> getOrdersByUserAndDateRange(int userId, java.util.Date startDate, java.util.Date endDate) {
+        List<Order> orders = new ArrayList<>();
+        String sql = "{CALL get_user_orders_by_date_range(?, ?, ?)}";
+        try (Connection conn = dataSource.getConnection();
+             CallableStatement cstmt = conn.prepareCall(sql)) {
+            cstmt.setInt(1, userId);
+            cstmt.setTimestamp(2, new Timestamp(startDate.getTime()));
+            cstmt.setTimestamp(3, new Timestamp(endDate.getTime()));
+
+            try (ResultSet rs = cstmt.executeQuery()) {
+                while (rs.next()) {
+                    Order order = new Order();
+                    order.setOrderId(rs.getInt("order_id"));
+                    order.setUserId(rs.getInt("user_id"));
+                    order.setMerchantId(rs.getInt("merchant_id"));
+                    order.setAddressId(rs.getInt("address_id"));
+                    order.setOrderTime(rs.getTimestamp("order_time"));
+                    order.setTotalPrice(rs.getBigDecimal("total_price"));
+                    order.setStatus(rs.getString("status"));
+                    order.setMerchantName(rs.getString("merchant_name"));
+                    order.setAddressDetails(rs.getString("delivery_address"));
+                    orders.add(order);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return orders;
+    }
 }

@@ -3,10 +3,12 @@ package com.campusdelivery.controller;
 import com.campusdelivery.entity.Order;
 import com.campusdelivery.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Date;
 import java.util.List;
 
 @RestController
@@ -40,9 +42,24 @@ public class OrderController {
         return new ResponseEntity<>(orders, HttpStatus.OK);
     }
 
+    @GetMapping("/user/{userId}/bydate")
+    public ResponseEntity<List<Order>> getOrdersByUserAndDateRange(
+            @PathVariable int userId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Date startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Date endDate) {
+        List<Order> orders = orderService.getOrdersByUserAndDateRange(userId, startDate, endDate);
+        return new ResponseEntity<>(orders, HttpStatus.OK);
+    }
+
     @GetMapping("/merchant/{merchantId}")
     public ResponseEntity<List<Order>> getOrdersByMerchantId(@PathVariable int merchantId) {
         List<Order> orders = orderService.getOrdersByMerchantId(merchantId);
+        return new ResponseEntity<>(orders, HttpStatus.OK);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<Order>> getAllOrders() {
+        List<Order> orders = orderService.getAllOrders();
         return new ResponseEntity<>(orders, HttpStatus.OK);
     }
 

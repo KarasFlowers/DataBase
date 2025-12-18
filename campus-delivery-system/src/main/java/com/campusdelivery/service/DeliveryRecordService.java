@@ -22,4 +22,8 @@ public class DeliveryRecordService {
     public void updateDeliveryRecord(DeliveryRecord record) {
         deliveryRecordDao.updateDeliveryRecord(record);
     }
+
+    public java.util.List<DeliveryRecord> getDeliveryRecordsByRiderId(int riderId) {
+        return deliveryRecordDao.getDeliveryRecordsByRiderId(riderId);
+    }
 }

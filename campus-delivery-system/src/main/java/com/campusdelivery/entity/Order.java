@@ -12,6 +12,11 @@ public class Order {
     private BigDecimal totalPrice;
     private String status;
 
+    // Fields for joined data
+    private String merchantName;
+    private String addressDetails;
+
+
     public Order() {}
 
     // Getters and Setters
@@ -29,4 +34,9 @@ public class Order {
     public void setTotalPrice(BigDecimal totalPrice) { this.totalPrice = totalPrice; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public String getMerchantName() { return merchantName; }
+    public void setMerchantName(String merchantName) { this.merchantName = merchantName; }
+    public String getAddressDetails() { return addressDetails; }
+    public void setAddressDetails(String addressDetails) { this.addressDetails = addressDetails; }
 }

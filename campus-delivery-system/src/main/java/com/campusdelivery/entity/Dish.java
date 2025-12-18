@@ -8,7 +8,7 @@ public class Dish {
     private String name;
     private String description;
     private BigDecimal price;
-    private boolean isAvailable;
+    private boolean available;
 
     public Dish() {}
 
@@ -23,6 +23,6 @@ public class Dish {
     public void setDescription(String description) { this.description = description; }
     public BigDecimal getPrice() { return price; }
     public void setPrice(BigDecimal price) { this.price = price; }
-    public boolean isAvailable() { return isAvailable; }
-    public void setAvailable(boolean isAvailable) { this.isAvailable = isAvailable; }
+    public boolean isAvailable() { return available; }
+    public void setAvailable(boolean available) { this.available = available; }
 }

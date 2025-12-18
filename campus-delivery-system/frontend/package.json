@@ -1,0 +1,22 @@
+{
+  "name": "campus-delivery-frontend",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@popperjs/core": "^2.11.8",
+    "axios": "^1.6.5",
+    "bootstrap": "^5.3.8",
+    "vue": "^3.4.0",
+    "vue-router": "^4.2.5"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.3",
+    "vite": "^5.0.11"
+  }
+}

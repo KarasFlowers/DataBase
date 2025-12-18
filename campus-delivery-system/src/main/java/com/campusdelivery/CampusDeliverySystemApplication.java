@@ -8,7 +8,7 @@ public class CampusDeliverySystemApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(CampusDeliverySystemApplication.class, args);
-        System.out.println("Campus Delivery System is running!");
+        System.out.println("success!");
     }
 
 }
