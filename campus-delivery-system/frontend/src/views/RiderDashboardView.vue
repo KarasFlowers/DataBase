@@ -76,7 +76,25 @@ const assignedOrders = ref([]);
 const availableOrders = ref([]);
 const completedOrders = ref([]);
 
-// Fetch all necessary data
+const enrichOrders = async (orders) => {
+    return await Promise.all(orders.map(async (order) => {
+        try {
+            const [merchantRes, addressRes] = await Promise.all([
+                axios.get(`/api/merchants/${order.merchantId}`),
+                axios.get(`/api/addresses/${order.addressId}`)
+            ]);
+            return {
+                ...order,
+                merchantName: merchantRes.data.name,
+                addressDetails: addressRes.data.addressDetails
+            };
+        } catch (enrichError) {
+            console.error(`Failed to enrich order #${order.orderId}`, enrichError);
+            return { ...order, merchantName: 'Unknown', addressDetails: 'Unknown' };
+        }
+    }));
+};
+
 const fetchData = async () => {
   if (userStore.state.userRole !== 'rider' || !userStore.state.riderId) {
     error.value = "您必须以骑手身份登录。";
@@ -87,39 +105,44 @@ const fetchData = async () => {
   error.value = null;
 
   try {
-    // 1. Fetch all orders and filter them
-    const allOrdersResponse = await axios.get('/api/orders');
-    const allOrders = allOrdersResponse.data;
+    const riderId = userStore.state.riderId;
 
-    // Enrich orders with merchant and address details
-    const enrichedOrders = await Promise.all(allOrders.map(async (order) => {
-        const [merchantRes, addressRes] = await Promise.all([
-            axios.get(`/api/merchants/${order.merchantId}`),
-            axios.get(`/api/addresses/${order.addressId}`)
-        ]);
-        return {
-            ...order,
-            merchantName: merchantRes.data.name,
-            addressDetails: addressRes.data.addressDetails
-        };
-    }));
+    // Fetch available orders and rider's own records concurrently
+    const [availableRes, deliveryRecordsRes] = await Promise.all([
+        axios.get('/api/orders/available'), // New endpoint for 'ready_for_pickup' orders
+        axios.get(`/api/deliveryrecords/rider/${riderId}`)
+    ]);
+    
+    // Enrich available orders
+    availableOrders.value = await enrichOrders(availableRes.data);
 
-    // 2. Fetch delivery records for the current rider
-    const deliveryRecordsResponse = await axios.get(`/api/deliveryrecords/rider/${userStore.state.riderId}`);
-    const riderRecords = deliveryRecordsResponse.data;
-    const riderOrderIds = riderRecords.map(rec => rec.orderId);
+    // Process rider's own delivery records
+    const riderRecords = deliveryRecordsRes.data;
+    if (riderRecords.length > 0) {
+        const orderIds = riderRecords.map(rec => rec.orderId);
+        
+        // Fetch full details for only the orders this rider is associated with
+        const associatedOrders = [];
+        for (const id of orderIds) {
+            const response = await axios.get(`/api/orders/${id}`);
+            associatedOrders.push(response.data);
+        }
+        const enrichedAssociatedOrders = await enrichOrders(associatedOrders);
 
-    // 3. Categorize orders
-    assignedOrders.value = enrichedOrders
-      .filter(order => riderOrderIds.includes(order.orderId) && order.status === 'delivering')
-      .map(order => {
-          const record = riderRecords.find(r => r.orderId === order.orderId);
-          return { ...order, deliveryStatus: record.status, deliveryId: record.deliveryId };
-      });
-      
-    availableOrders.value = enrichedOrders.filter(order => order.status === 'preparing');
+        assignedOrders.value = enrichedAssociatedOrders
+            .filter(order => order.status === 'delivering')
+            .map(order => {
+                const record = riderRecords.find(r => r.orderId === order.orderId);
+                return { ...order, deliveryStatus: record?.status, deliveryId: record?.deliveryId };
+            });
 
-    completedOrders.value = enrichedOrders.filter(order => riderOrderIds.includes(order.orderId) && order.status === 'completed');
+        completedOrders.value = enrichedAssociatedOrders
+            .filter(order => order.status === 'completed');
+    } else {
+        // If rider has no records, their lists are empty
+        assignedOrders.value = [];
+        completedOrders.value = [];
+    }
 
   } catch (err) {
     error.value = '加载工作台数据失败。';
@@ -191,8 +214,9 @@ const getDeliveryStatusClass = (status) => {
 
 const translateStatus = (status) => {
     const map = {
-        pending: '待处理',
+        unpaid: '待支付',
         preparing: '备餐中',
+        ready_for_pickup: '待取餐',
         delivering: '配送中',
         completed: '已完成',
         cancelled: '已取消'

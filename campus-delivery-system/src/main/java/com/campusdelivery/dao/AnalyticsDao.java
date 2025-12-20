@@ -49,6 +49,22 @@ public class AnalyticsDao {
         return getCount("SELECT COUNT(*) FROM users");
     }
 
+    public long getTotalAdminUsers() {
+        return getCount("SELECT COUNT(*) FROM users WHERE role = 'admin'");
+    }
+
+    public long getTotalCustomerUsers() {
+        return getCount("SELECT COUNT(*) FROM users WHERE role = 'user'");
+    }
+
+    public long getTotalMerchantUsersByRole() {
+        return getCount("SELECT COUNT(*) FROM users WHERE role = 'merchant'");
+    }
+
+    public long getTotalRiderUsersByRole() {
+        return getCount("SELECT COUNT(*) FROM users WHERE role = 'rider'");
+    }
+
     public long getTotalMerchants() {
         return getCount("SELECT COUNT(*) FROM merchants");
     }

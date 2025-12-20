@@ -14,6 +14,15 @@
         <label for="price" class="form-label">价格</label>
         <input type="number" step="0.01" class="form-control" id="price" v-model.number="dish.price" required>
       </div>
+      <div class="mb-3">
+        <label for="category" class="form-label">菜品分区</label>
+        <select class="form-select" id="category" v-model="dish.categoryId">
+            <option :value="null">-- 无分区 --</option>
+            <option v-for="category in categories" :key="category.categoryId" :value="category.categoryId">
+                {{ category.categoryName }}
+            </option>
+        </select>
+      </div>
       <div class="mb-3 form-check">
         <input type="checkbox" class="form-check-input" id="isAvailable" v-model="dish.available">
         <label class="form-check-label" for="isAvailable">可购买</label>
@@ -39,23 +48,35 @@ const props = defineProps({
 });
 
 const router = useRouter();
+const categories = ref([]);
 
 const dish = ref({
   name: '',
   description: '',
   price: 0.0,
   available: true,
-  merchantId: parseInt(props.merchantId)
+  merchantId: parseInt(props.merchantId),
+  categoryId: null,
 });
 
 const error = ref(null);
 
-onMounted(() => {
+onMounted(async () => {
   const currentMerchantId = parseInt(props.merchantId);
   if (userStore.state.userRole === 'admin' || (userStore.state.userRole === 'merchant' && userStore.state.merchantId === currentMerchantId)) {
     // Allow access
   } else {
     router.push('/'); // Redirect to home if not authorized
+    return;
+  }
+
+  // Fetch categories for the dropdown
+  try {
+      const response = await axios.get(`/api/categories/merchant/${currentMerchantId}`);
+      categories.value = response.data;
+  } catch (err) {
+      console.error("Failed to fetch categories:", err);
+      // Non-critical error, the form can still be used.
   }
 });
 

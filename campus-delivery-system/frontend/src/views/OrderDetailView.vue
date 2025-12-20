@@ -59,7 +59,14 @@
             <div v-if="currentReview">
                 <p><strong>您的评分:</strong> {{ currentReview.rating }}/5</p>
                 <p><strong>您的评论:</strong> {{ currentReview.comment }}</p>
-                <p class="text-muted"><small>评价于: {{ new Date(currentReview.reviewTime).toLocaleString() }}</small></p>
+                <p class="text-muted">
+                    <small>
+                        评价于: {{ new Date(currentReview.reviewTime).toLocaleString() }}
+                        <span v-if="new Date(currentReview.lastModifiedTime).getTime() > new Date(currentReview.reviewTime).getTime()" class="ms-2">
+                            (已编辑: {{ new Date(currentReview.lastModifiedTime).toLocaleString() }})
+                        </span>
+                    </small>
+                </p>
             </div>
             <div v-else-if="userStore.state.userRole === 'user' && order.userId === userStore.state.userId && order.status === 'completed'">
                 <h6>提交您的评价</h6>
@@ -206,10 +213,11 @@ const submitReview = async () => {
 
 const getStatusClass = (status) => {
   switch (status) {
-    case 'pending': return 'bg-warning text-dark';
+    case 'unpaid': return 'bg-warning text-dark';
     case 'preparing': return 'bg-info text-dark';
+    case 'ready_for_pickup': return 'bg-success';
     case 'delivering': return 'bg-primary';
-    case 'completed': return 'bg-success';
+    case 'completed': return 'bg-secondary';
     case 'cancelled': return 'bg-danger';
     default: return 'bg-secondary';
   }
@@ -217,8 +225,9 @@ const getStatusClass = (status) => {
 
 const translateStatus = (status) => {
     const map = {
-        pending: '待处理',
+        unpaid: '待支付',
         preparing: '备餐中',
+        ready_for_pickup: '待取餐',
         delivering: '配送中',
         completed: '已完成',
         cancelled: '已取消'

@@ -20,6 +20,10 @@ public class AnalyticsService {
         AdminDashboardStats stats = new AdminDashboardStats();
 
         stats.setTotalUsers(analyticsDao.getTotalUsers());
+        stats.setTotalAdminUsers(analyticsDao.getTotalAdminUsers());
+        stats.setTotalCustomerUsers(analyticsDao.getTotalCustomerUsers());
+        stats.setTotalMerchantUsersByRole(analyticsDao.getTotalMerchantUsersByRole());
+        stats.setTotalRiderUsersByRole(analyticsDao.getTotalRiderUsersByRole());
         stats.setTotalMerchants(analyticsDao.getTotalMerchants());
         stats.setTotalRiders(analyticsDao.getTotalRiders());
         stats.setTotalOrders(analyticsDao.getTotalOrders());

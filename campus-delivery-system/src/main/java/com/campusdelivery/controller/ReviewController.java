@@ -22,6 +22,27 @@ public class ReviewController {
         return new ResponseEntity<>("Review added successfully", HttpStatus.CREATED);
     }
 
+    @PutMapping
+    public ResponseEntity<String> updateReview(@RequestBody Review review) {
+        reviewService.updateReview(review);
+        return new ResponseEntity<>("Review updated successfully", HttpStatus.OK);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<Review>> getAllReviews() {
+        List<Review> reviews = reviewService.getAllReviews();
+        return new ResponseEntity<>(reviews, HttpStatus.OK);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Review> getReviewById(@PathVariable int id) {
+        Review review = reviewService.getReviewById(id);
+        if (review != null) {
+            return new ResponseEntity<>(review, HttpStatus.OK);
+        }
+        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    }
+
     @GetMapping("/order/{orderId}")
     public ResponseEntity<Review> getReviewByOrderId(@PathVariable int orderId) {
         Review review = reviewService.getReviewByOrderId(orderId);
@@ -47,5 +68,17 @@ public class ReviewController {
     public ResponseEntity<String> deleteReview(@PathVariable int reviewId) {
         reviewService.deleteReview(reviewId);
         return new ResponseEntity<>("Review deleted successfully", HttpStatus.NO_CONTENT);
+    }
+
+    @GetMapping("/merchant/{merchantId}/unseen/count")
+    public ResponseEntity<Integer> countUnseenReviewsByMerchant(@PathVariable int merchantId) {
+        int count = reviewService.countUnseenReviewsByMerchant(merchantId);
+        return new ResponseEntity<>(count, HttpStatus.OK);
+    }
+
+    @PostMapping("/merchant/{merchantId}/mark-as-seen")
+    public ResponseEntity<String> markReviewsAsSeenByMerchant(@PathVariable int merchantId) {
+        reviewService.markReviewsAsSeenByMerchant(merchantId);
+        return new ResponseEntity<>("Reviews marked as seen", HttpStatus.OK);
     }
 }

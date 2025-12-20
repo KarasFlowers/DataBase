@@ -32,8 +32,9 @@ public class MerchantController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Merchant>> getAllMerchants() {
-        List<Merchant> merchants = merchantService.getAllMerchants();
+    public ResponseEntity<List<Merchant>> getAllMerchants(
+            @RequestParam(required = false, defaultValue = "default") String sortBy) {
+        List<Merchant> merchants = merchantService.getAllMerchants(sortBy);
         return new ResponseEntity<>(merchants, HttpStatus.OK);
     }
 

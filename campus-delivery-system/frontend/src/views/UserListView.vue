@@ -55,7 +55,7 @@ const fetchUsers = async () => {
   loading.value = true;
   try {
     const response = await axios.get('/api/users');
-    users.value = response.data;
+    users.value = response.data.filter(user => user.role === 'user');
   } catch (err) {
     error.value = '获取用户列表失败。';
     console.error('Error fetching users:', err);

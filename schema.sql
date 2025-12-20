@@ -6,6 +6,8 @@ CREATE TABLE users (
     username VARCHAR(50) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
     phone_number VARCHAR(20) NOT NULL UNIQUE,
+    role ENUM('admin', 'user', 'merchant', 'rider') NOT NULL DEFAULT 'user',
+    entity_id INT NULL COMMENT 'Corresponds to merchant_id or rider_id based on role',
     registration_date DATETIME DEFAULT CURRENT_TIMESTAMP,
     INDEX(username)
 );
@@ -26,6 +28,7 @@ CREATE TABLE merchants (
     address VARCHAR(255),
     phone_number VARCHAR(20),
     rating DECIMAL(3, 2) DEFAULT 0.00,
+    sales_count INT NOT NULL DEFAULT 0,
     INDEX(name)
 );
 
@@ -36,9 +39,20 @@ CREATE TABLE dishes (
     name VARCHAR(100) NOT NULL,
     description TEXT,
     price DECIMAL(10, 2) NOT NULL,
+    category_id INT NULL,
     is_available BOOLEAN DEFAULT TRUE,
     FOREIGN KEY (merchant_id) REFERENCES merchants(merchant_id) ON DELETE CASCADE,
+    FOREIGN KEY (category_id) REFERENCES dish_categories(category_id) ON DELETE SET NULL,
     INDEX(name)
+);
+
+-- 新增：4.5. 菜品分区表 (Dish Category Table)
+CREATE TABLE dish_categories (
+    category_id INT AUTO_INCREMENT PRIMARY KEY,
+    merchant_id INT NOT NULL,
+    category_name VARCHAR(50) NOT NULL,
+    FOREIGN KEY (merchant_id) REFERENCES merchants(merchant_id) ON DELETE CASCADE,
+    UNIQUE (merchant_id, category_name)
 );
 
 -- 5. 订单表 (Order Table)
@@ -49,7 +63,7 @@ CREATE TABLE orders (
     address_id INT NOT NULL,
     order_time DATETIME DEFAULT CURRENT_TIMESTAMP,
     total_price DECIMAL(10, 2) NOT NULL,
-    status ENUM('pending', 'preparing', 'delivering', 'completed', 'cancelled') DEFAULT 'pending',
+    status ENUM('unpaid', 'preparing', 'ready_for_pickup', 'delivering', 'completed', 'cancelled') DEFAULT 'unpaid',
     FOREIGN KEY (user_id) REFERENCES users(user_id),
     FOREIGN KEY (merchant_id) REFERENCES merchants(merchant_id),
     FOREIGN KEY (address_id) REFERENCES addresses(address_id)
@@ -94,56 +108,96 @@ CREATE TABLE reviews (
     rating INT NOT NULL CHECK (rating >= 1 AND rating <= 5),
     comment TEXT,
     review_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    last_modified_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    is_seen_by_merchant BOOLEAN DEFAULT FALSE,
     FOREIGN KEY (order_id) REFERENCES orders(order_id),
     FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
 
--- Triggers for merchant rating update
+-- Triggers for merchant rating update and data integrity
 DELIMITER //
 
+-- On Review Insert: Recalculate merchant rating
 CREATE TRIGGER update_merchant_rating_on_review_insert
 AFTER INSERT ON reviews
 FOR EACH ROW
 BEGIN
     DECLARE merchant_id_val INT;
-
-    -- Get the merchant_id from the order associated with the new review
-    SELECT o.merchant_id INTO merchant_id_val
-    FROM orders o
-    WHERE o.order_id = NEW.order_id;
-
-    -- Recalculate and update the merchant's rating
+    SELECT o.merchant_id INTO merchant_id_val FROM orders o WHERE o.order_id = NEW.order_id;
     UPDATE merchants m
     SET m.rating = (
-        SELECT AVG(r.rating)
-        FROM reviews r
-        JOIN orders o2 ON r.order_id = o2.order_id
+        SELECT COALESCE(AVG(r.rating), 0.00)
+        FROM reviews r JOIN orders o2 ON r.order_id = o2.order_id
         WHERE o2.merchant_id = merchant_id_val
     )
     WHERE m.merchant_id = merchant_id_val;
 END;
 //
 
+-- On Review Update: Recalculate merchant rating
 CREATE TRIGGER update_merchant_rating_on_review_update
 AFTER UPDATE ON reviews
 FOR EACH ROW
 BEGIN
     DECLARE merchant_id_val INT;
-
-    -- Get the merchant_id from the order associated with the updated review
-    SELECT o.merchant_id INTO merchant_id_val
-    FROM orders o
-    WHERE o.order_id = NEW.order_id;
-
-    -- Recalculate and update the merchant's rating
+    SELECT o.merchant_id INTO merchant_id_val FROM orders o WHERE o.order_id = NEW.order_id;
     UPDATE merchants m
     SET m.rating = (
-        SELECT AVG(r.rating)
-        FROM reviews r
-        JOIN orders o2 ON r.order_id = o2.order_id
+        SELECT COALESCE(AVG(r.rating), 0.00)
+        FROM reviews r JOIN orders o2 ON r.order_id = o2.order_id
         WHERE o2.merchant_id = merchant_id_val
     )
     WHERE m.merchant_id = merchant_id_val;
+END;
+//
+
+-- On Review Delete: Recalculate merchant rating
+CREATE TRIGGER reviews_after_delete
+AFTER DELETE ON reviews
+FOR EACH ROW
+BEGIN
+    DECLARE merchant_id_val INT;
+    -- Find the merchant associated with the deleted review's order
+    SELECT o.merchant_id INTO merchant_id_val FROM orders o WHERE o.order_id = OLD.order_id;
+    IF merchant_id_val IS NOT NULL THEN
+        UPDATE merchants m
+        SET m.rating = (
+            SELECT COALESCE(AVG(r.rating), 0.00)
+            FROM reviews r JOIN orders o2 ON r.order_id = o2.order_id
+            WHERE o2.merchant_id = merchant_id_val
+        )
+        WHERE m.merchant_id = merchant_id_val;
+    END IF;
+END;
+//
+
+-- On Order Delete: Clean up associated data
+CREATE TRIGGER orders_after_delete
+AFTER DELETE ON orders
+FOR EACH ROW
+BEGIN
+    -- Decrement sales count if the deleted order was completed
+    IF OLD.status = 'completed' THEN
+        UPDATE merchants SET sales_count = sales_count - 1 WHERE merchant_id = OLD.merchant_id;
+    END IF;
+    
+    -- Delete the associated review, which will then fire the review deletion trigger.
+    DELETE FROM reviews WHERE order_id = OLD.order_id;
+END;
+//
+
+-- On Order Update: Update sales count based on status change
+CREATE TRIGGER orders_after_update
+AFTER UPDATE ON orders
+FOR EACH ROW
+BEGIN
+    -- if status changes TO completed
+    IF OLD.status <> 'completed' AND NEW.status = 'completed' THEN
+        UPDATE merchants SET sales_count = sales_count + 1 WHERE merchant_id = NEW.merchant_id;
+    -- if status changes FROM completed
+    ELSEIF OLD.status = 'completed' AND NEW.status <> 'completed' THEN
+        UPDATE merchants SET sales_count = sales_count - 1 WHERE merchant_id = NEW.merchant_id;
+    END IF;
 END;
 //
 

@@ -8,6 +8,8 @@ public class User {
     private String passwordHash;
     private String phoneNumber;
     private Date registrationDate;
+    private String role;
+    private Integer entityId;
 
     public User() {}
 
@@ -22,4 +24,8 @@ public class User {
     public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
     public Date getRegistrationDate() { return registrationDate; }
     public void setRegistrationDate(Date registrationDate) { this.registrationDate = registrationDate; }
+    public String getRole() { return role; }
+    public void setRole(String role) { this.role = role; }
+    public Integer getEntityId() { return entityId; }
+    public void setEntityId(Integer entityId) { this.entityId = entityId; }
 }

@@ -5,11 +5,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import javax.sql.DataSource;
-import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,7 +20,7 @@ public class DishDao {
     private DataSource dataSource;
 
     public void addDish(Dish dish) {
-        String sql = "INSERT INTO dishes (merchant_id, name, description, price, is_available) VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO dishes (merchant_id, name, description, price, is_available, category_id) VALUES (?, ?, ?, ?, ?, ?)";
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, dish.getMerchantId());
@@ -28,6 +28,11 @@ public class DishDao {
             pstmt.setString(3, dish.getDescription());
             pstmt.setBigDecimal(4, dish.getPrice());
             pstmt.setBoolean(5, dish.isAvailable());
+            if (dish.getCategoryId() != null) {
+                pstmt.setInt(6, dish.getCategoryId());
+            } else {
+                pstmt.setNull(6, Types.INTEGER);
+            }
             pstmt.executeUpdate();
             System.out.println("DAO: Successfully added dish " + dish.getName() + " for merchant ID " + dish.getMerchantId());
         } catch (SQLException e) {
@@ -36,22 +41,27 @@ public class DishDao {
         }
     }
 
+    private Dish mapRowToDish(ResultSet rs) throws SQLException {
+        Dish dish = new Dish();
+        dish.setDishId(rs.getInt("dish_id"));
+        dish.setMerchantId(rs.getInt("merchant_id"));
+        dish.setName(rs.getString("name"));
+        dish.setDescription(rs.getString("description"));
+        dish.setPrice(rs.getBigDecimal("price"));
+        dish.setAvailable(rs.getBoolean("is_available"));
+        dish.setCategoryId((Integer) rs.getObject("category_id"));
+        return dish;
+    }
+
     public Dish getDishById(int dishId) {
         String sql = "SELECT * FROM dishes WHERE dish_id = ?";
-        Dish dish = null;
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, dishId);
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
-                    dish = new Dish();
-                    dish.setDishId(rs.getInt("dish_id"));
-                    dish.setMerchantId(rs.getInt("merchant_id"));
-                    dish.setName(rs.getString("name"));
-                    dish.setDescription(rs.getString("description"));
-                    dish.setPrice(rs.getBigDecimal("price"));
-                    dish.setAvailable(rs.getBoolean("is_available"));
                     System.out.println("DAO: Found dish by ID " + dishId);
+                    return mapRowToDish(rs);
                 } else {
                     System.out.println("DAO: No dish found with ID " + dishId);
                 }
@@ -60,29 +70,19 @@ public class DishDao {
             System.err.println("DAO Error: Failed to get dish by ID " + dishId);
             e.printStackTrace();
         }
-        return dish;
+        return null;
     }
     
     public List<Dish> getAllDishes() {
         String sql = "SELECT * FROM dishes";
         List<Dish> dishes = new ArrayList<>();
-
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql);
              ResultSet rs = pstmt.executeQuery()) {
-
             while (rs.next()) {
-                Dish dish = new Dish();
-                dish.setDishId(rs.getInt("dish_id"));
-                dish.setMerchantId(rs.getInt("merchant_id"));
-                dish.setName(rs.getString("name"));
-                dish.setDescription(rs.getString("description"));
-                dish.setPrice(rs.getBigDecimal("price"));
-                dish.setAvailable(rs.getBoolean("is_available"));
-                dishes.add(dish);
+                dishes.add(mapRowToDish(rs));
             }
             System.out.println("DAO: Retrieved " + dishes.size() + " dishes.");
-
         } catch (SQLException e) {
             System.err.println("DAO Error: Failed to get all dishes.");
             e.printStackTrace();
@@ -98,14 +98,7 @@ public class DishDao {
             pstmt.setInt(1, merchantId);
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
-                    Dish dish = new Dish();
-                    dish.setDishId(rs.getInt("dish_id"));
-                    dish.setMerchantId(rs.getInt("merchant_id"));
-                    dish.setName(rs.getString("name"));
-                    dish.setDescription(rs.getString("description"));
-                    dish.setPrice(rs.getBigDecimal("price"));
-                    dish.setAvailable(rs.getBoolean("is_available"));
-                    dishes.add(dish);
+                    dishes.add(mapRowToDish(rs));
                 }
                 System.out.println("DAO: Retrieved " + dishes.size() + " dishes for merchant ID " + merchantId);
             }
@@ -117,14 +110,19 @@ public class DishDao {
     }
 
     public void updateDish(Dish dish) {
-        String sql = "UPDATE dishes SET name = ?, description = ?, price = ?, is_available = ? WHERE dish_id = ?";
+        String sql = "UPDATE dishes SET name = ?, description = ?, price = ?, is_available = ?, category_id = ? WHERE dish_id = ?";
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, dish.getName());
             pstmt.setString(2, dish.getDescription());
             pstmt.setBigDecimal(3, dish.getPrice());
             pstmt.setBoolean(4, dish.isAvailable());
-            pstmt.setInt(5, dish.getDishId());
+            if (dish.getCategoryId() != null) {
+                pstmt.setInt(5, dish.getCategoryId());
+            } else {
+                pstmt.setNull(5, Types.INTEGER);
+            }
+            pstmt.setInt(6, dish.getDishId());
             int affectedRows = pstmt.executeUpdate();
             if (affectedRows > 0) {
                 System.out.println("DAO: Successfully updated dish " + dish.getName());

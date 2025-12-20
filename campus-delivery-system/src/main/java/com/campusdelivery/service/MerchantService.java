@@ -13,16 +13,16 @@ public class MerchantService {
     @Autowired
     private MerchantDao merchantDao;
 
-    public void addMerchant(Merchant merchant) {
-        merchantDao.addMerchant(merchant);
+    public int addMerchant(Merchant merchant) {
+        return merchantDao.addMerchant(merchant);
     }
 
     public Merchant getMerchantById(int merchantId) {
         return merchantDao.getMerchantById(merchantId);
     }
 
-    public List<Merchant> getAllMerchants() {
-        return merchantDao.getAllMerchants();
+    public List<Merchant> getAllMerchants(String sortBy) {
+        return merchantDao.getAllMerchants(sortBy);
     }
 
     public void updateMerchant(Merchant merchant) {

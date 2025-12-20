@@ -1,6 +1,6 @@
 <template>
   <div class="admin-dashboard">
-    <h1>数据看板</h1>
+    <h1>数据统计</h1>
 
     <div v-if="loading" class="alert alert-info">正在加载统计数据...</div>
     <div v-else-if="error" class="alert alert-danger">{{ error }}</div>
@@ -8,27 +8,48 @@
     <div v-else>
       <h2 class="section-title">平台总览</h2>
       <div class="stats-grid">
+        <!-- 总用户账号数 -->
         <div class="stat-card">
           <i class="bi bi-people-fill icon-users"></i>
           <div class="stat-info">
             <span class="stat-value">{{ stats.totalUsers }}</span>
-            <span class="stat-label">总用户数</span>
+            <span class="stat-label">总用户</span>
           </div>
         </div>
+        <!-- 管理员账号数 -->
+                <div class="stat-card">
+                  <i class="bi bi-person-gear icon-admin"></i>
+                  <div class="stat-info">
+                    <span class="stat-value">{{ stats.totalAdminUsers }}</span>
+                    <span class="stat-label">管理员</span>
+                  </div>
+                </div>
+        <!-- 普通顾客数 -->
+        <div class="stat-card">
+          <i class="bi bi-person-fill icon-customer"></i>
+          <div class="stat-info">
+            <span class="stat-value">{{ stats.totalCustomerUsers }}</span>
+            <span class="stat-label">顾客</span>
+          </div>
+        </div>
+        <!-- 商家账号数 -->
         <div class="stat-card">
           <i class="bi bi-shop icon-merchants"></i>
           <div class="stat-info">
-            <span class="stat-value">{{ stats.totalMerchants }}</span>
-            <span class="stat-label">总商家数</span>
+            <span class="stat-value">{{ stats.totalMerchantUsersByRole }}</span>
+            <span class="stat-label">商家</span>
           </div>
         </div>
+        <!-- 骑手账号数 -->
         <div class="stat-card">
           <i class="bi bi-bicycle icon-riders"></i>
           <div class="stat-info">
-            <span class="stat-value">{{ stats.totalRiders }}</span>
-            <span class="stat-label">总骑手数</span>
+            <span class="stat-value">{{ stats.totalRiderUsersByRole }}</span>
+            <span class="stat-label">骑手</span>
           </div>
         </div>
+
+        <!-- 总订单数 -->
         <div class="stat-card">
           <i class="bi bi-box-seam icon-orders"></i>
           <div class="stat-info">
@@ -36,10 +57,11 @@
             <span class="stat-label">总订单数</span>
           </div>
         </div>
+        <!-- 总营业额 -->
         <div class="stat-card">
           <i class="bi bi-cash-stack icon-revenue"></i>
           <div class="stat-info">
-            <span class="stat-value">${{ stats.totalRevenue }}</span>
+            <span class="stat-value">￥{{ stats.totalRevenue }}</span>
             <span class="stat-label">总营业额</span>
           </div>
         </div>
@@ -57,7 +79,7 @@
         <div class="stat-card">
            <i class="bi bi-currency-dollar icon-today-revenue"></i>
           <div class="stat-info">
-            <span class="stat-value">${{ stats.revenueToday }}</span>
+            <span class="stat-value">￥{{ stats.revenueToday }}</span>
             <span class="stat-label">今日营业额</span>
           </div>
         </div>
@@ -77,8 +99,12 @@ const loading = ref(true);
 const error = ref(null);
 const stats = ref({
   totalUsers: 0,
-  totalMerchants: 0,
-  totalRiders: 0,
+  totalAdminUsers: 0,
+  totalCustomerUsers: 0,
+  totalMerchantUsersByRole: 0,
+  totalRiderUsersByRole: 0,
+  totalMerchants: 0, // Entity count
+  totalRiders: 0, // Entity count
   totalOrders: 0,
   totalRevenue: '0.00',
   ordersToday: 0,
@@ -179,4 +205,9 @@ onMounted(async () => {
 .icon-revenue { background-color: #198754; }
 .icon-today { background-color: #ffc107; }
 .icon-today-revenue { background-color: #fd7e14; }
+/* New Icons */
+.icon-customer { background-color: #20c997; }
+.icon-admin { background-color: #dc3545; }
+.icon-merchants-entity { background-color: #6f42c1; }
+.icon-riders-entity { background-color: #fd7e14; }
 </style>

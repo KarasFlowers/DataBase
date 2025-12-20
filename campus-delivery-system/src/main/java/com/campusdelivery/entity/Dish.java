@@ -9,6 +9,7 @@ public class Dish {
     private String description;
     private BigDecimal price;
     private boolean available;
+    private Integer categoryId;
 
     public Dish() {}
 
@@ -25,4 +26,6 @@ public class Dish {
     public void setPrice(BigDecimal price) { this.price = price; }
     public boolean isAvailable() { return available; }
     public void setAvailable(boolean available) { this.available = available; }
+    public Integer getCategoryId() { return categoryId; }
+    public void setCategoryId(Integer categoryId) { this.categoryId = categoryId; }
 }

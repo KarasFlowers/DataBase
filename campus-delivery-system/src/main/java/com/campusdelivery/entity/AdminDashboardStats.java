@@ -4,8 +4,12 @@ import java.math.BigDecimal;
 
 public class AdminDashboardStats {
     private long totalUsers;
-    private long totalMerchants;
-    private long totalRiders;
+    private long totalAdminUsers; // New field
+    private long totalCustomerUsers; // New field
+    private long totalMerchantUsersByRole; // New field
+    private long totalRiderUsersByRole; // New field
+    private long totalMerchants; // Entity count
+    private long totalRiders; // Entity count
     private long totalOrders;
     private BigDecimal totalRevenue;
     private long ordersToday;
@@ -19,6 +23,16 @@ public class AdminDashboardStats {
     public void setTotalUsers(long totalUsers) {
         this.totalUsers = totalUsers;
     }
+
+    // New Getters and Setters
+    public long getTotalAdminUsers() { return totalAdminUsers; }
+    public void setTotalAdminUsers(long totalAdminUsers) { this.totalAdminUsers = totalAdminUsers; }
+    public long getTotalCustomerUsers() { return totalCustomerUsers; }
+    public void setTotalCustomerUsers(long totalCustomerUsers) { this.totalCustomerUsers = totalCustomerUsers; }
+    public long getTotalMerchantUsersByRole() { return totalMerchantUsersByRole; }
+    public void setTotalMerchantUsersByRole(long totalMerchantUsersByRole) { this.totalMerchantUsersByRole = totalMerchantUsersByRole; }
+    public long getTotalRiderUsersByRole() { return totalRiderUsersByRole; }
+    public void setTotalRiderUsersByRole(long totalRiderUsersByRole) { this.totalRiderUsersByRole = totalRiderUsersByRole; }
 
     public long getTotalMerchants() {
         return totalMerchants;

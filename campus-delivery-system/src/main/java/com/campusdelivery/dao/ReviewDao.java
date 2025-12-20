@@ -2,6 +2,7 @@ package com.campusdelivery.dao;
 
 import com.campusdelivery.entity.Review;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Repository;
 
 import javax.sql.DataSource;
@@ -9,7 +10,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,6 +18,20 @@ public class ReviewDao {
 
     @Autowired
     private DataSource dataSource;
+
+    // This helper ONLY maps columns from the 'reviews' table itself.
+    private Review mapRowToReview(ResultSet rs) throws SQLException {
+        Review review = new Review();
+        review.setReviewId(rs.getInt("review_id"));
+        review.setOrderId(rs.getInt("order_id"));
+        review.setUserId(rs.getInt("user_id"));
+        review.setRating(rs.getInt("rating"));
+        review.setComment(rs.getString("comment"));
+        review.setReviewTime(rs.getTimestamp("review_time"));
+        review.setLastModifiedTime(rs.getTimestamp("last_modified_time"));
+        review.setSeenByMerchant(rs.getBoolean("is_seen_by_merchant"));
+        return review;
+    }
 
     public void addReview(Review review) {
         String sql = "INSERT INTO reviews (order_id, user_id, rating, comment) VALUES (?, ?, ?, ?)";
@@ -28,89 +42,41 @@ public class ReviewDao {
             pstmt.setInt(3, review.getRating());
             pstmt.setString(4, review.getComment());
             pstmt.executeUpdate();
-            System.out.println("DAO: Successfully added review for order ID " + review.getOrderId());
         } catch (SQLException e) {
-            System.err.println("DAO Error: Failed to add review for order ID " + review.getOrderId());
-            e.printStackTrace();
+            throw new DataIntegrityViolationException("Error adding review.", e);
         }
     }
 
     public Review getReviewById(int reviewId) {
         String sql = "SELECT * FROM reviews WHERE review_id = ?";
-        Review review = null;
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, reviewId);
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
-                    review = new Review();
-                    review.setReviewId(rs.getInt("review_id"));
-                    review.setOrderId(rs.getInt("order_id"));
-                    review.setUserId(rs.getInt("user_id"));
-                    review.setRating(rs.getInt("rating"));
-                    review.setComment(rs.getString("comment"));
-                    review.setReviewTime(rs.getTimestamp("review_time"));
-                    System.out.println("DAO: Found review by ID " + reviewId);
-                } else {
-                    System.out.println("DAO: No review found with ID " + reviewId);
+                    return mapRowToReview(rs);
                 }
             }
         } catch (SQLException e) {
-            System.err.println("DAO Error: Failed to get review by ID " + reviewId);
             e.printStackTrace();
         }
-        return review;
+        return null;
     }
 
     public Review getReviewByOrderId(int orderId) {
         String sql = "SELECT * FROM reviews WHERE order_id = ?";
-        Review review = null;
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, orderId);
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
-                    review = new Review();
-                    review.setReviewId(rs.getInt("review_id"));
-                    review.setOrderId(rs.getInt("order_id"));
-                    review.setUserId(rs.getInt("user_id"));
-                    review.setRating(rs.getInt("rating"));
-                    review.setComment(rs.getString("comment"));
-                    review.setReviewTime(rs.getTimestamp("review_time"));
-                    System.out.println("DAO: Found review for order ID " + orderId);
-                } else {
-                    System.out.println("DAO: No review found for order ID " + orderId);
+                    return mapRowToReview(rs);
                 }
             }
         } catch (SQLException e) {
-            System.err.println("DAO Error: Failed to get review by order ID " + orderId);
             e.printStackTrace();
         }
-        return review;
-    }
-
-    public List<Review> getAllReviews() {
-        String sql = "SELECT * FROM reviews";
-        List<Review> reviews = new ArrayList<>();
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql);
-             ResultSet rs = pstmt.executeQuery()) {
-            while (rs.next()) {
-                Review review = new Review();
-                review.setReviewId(rs.getInt("review_id"));
-                review.setOrderId(rs.getInt("order_id"));
-                review.setUserId(rs.getInt("user_id"));
-                review.setRating(rs.getInt("rating"));
-                review.setComment(rs.getString("comment"));
-                review.setReviewTime(rs.getTimestamp("review_time"));
-                reviews.add(review);
-            }
-            System.out.println("DAO: Retrieved " + reviews.size() + " reviews.");
-        } catch (SQLException e) {
-            System.err.println("DAO Error: Failed to get all reviews.");
-            e.printStackTrace();
-        }
-        return reviews;
+        return null;
     }
 
     public List<Review> getReviewsByUserId(int userId) {
@@ -121,41 +87,49 @@ public class ReviewDao {
             pstmt.setInt(1, userId);
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
-                    Review review = new Review();
-                    review.setReviewId(rs.getInt("review_id"));
-                    review.setOrderId(rs.getInt("order_id"));
-                    review.setUserId(rs.getInt("user_id"));
-                    review.setRating(rs.getInt("rating"));
-                    review.setComment(rs.getString("comment"));
-                    review.setReviewTime(rs.getTimestamp("review_time"));
-                    reviews.add(review);
+                    reviews.add(mapRowToReview(rs));
                 }
-                System.out.println("DAO: Retrieved " + reviews.size() + " reviews for user ID " + userId);
             }
         } catch (SQLException e) {
-            System.err.println("DAO Error: Failed to get reviews for user ID " + userId);
+            e.printStackTrace();
+        }
+        return reviews;
+    }
+
+    public List<Review> getAllReviews() {
+        List<Review> reviews = new ArrayList<>();
+        String sql = "SELECT r.*, u.username, o.merchant_id, m.name as merchant_name " +
+                     "FROM reviews r " +
+                     "JOIN users u ON r.user_id = u.user_id " +
+                     "JOIN orders o ON r.order_id = o.order_id " +
+                     "JOIN merchants m ON o.merchant_id = m.merchant_id " +
+                     "ORDER BY r.review_time DESC";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
+            while (rs.next()) {
+                Review review = mapRowToReview(rs);
+                // Set fields from JOINed tables separately
+                review.setUsername(rs.getString("username"));
+                review.setMerchantName(rs.getString("merchant_name"));
+                review.setMerchantId(rs.getInt("merchant_id"));
+                reviews.add(review);
+            }
+        } catch (SQLException e) {
             e.printStackTrace();
         }
         return reviews;
     }
 
     public void updateReview(Review review) {
-        String sql = "UPDATE reviews SET order_id = ?, user_id = ?, rating = ?, comment = ? WHERE review_id = ?";
+        String sql = "UPDATE reviews SET rating = ?, comment = ? WHERE review_id = ?";
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setInt(1, review.getOrderId());
-            pstmt.setInt(2, review.getUserId());
-            pstmt.setInt(3, review.getRating());
-            pstmt.setString(4, review.getComment());
-            pstmt.setInt(5, review.getReviewId());
-            int affectedRows = pstmt.executeUpdate();
-            if (affectedRows > 0) {
-                System.out.println("DAO: Successfully updated review with ID " + review.getReviewId());
-            } else {
-                System.out.println("DAO: No review found with ID " + review.getReviewId() + " to update.");
-            }
+            pstmt.setInt(1, review.getRating());
+            pstmt.setString(2, review.getComment());
+            pstmt.setInt(3, review.getReviewId());
+            pstmt.executeUpdate();
         } catch (SQLException e) {
-            System.err.println("DAO Error: Failed to update review with ID " + review.getReviewId());
             e.printStackTrace();
         }
     }
@@ -165,14 +139,8 @@ public class ReviewDao {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, reviewId);
-            int affectedRows = pstmt.executeUpdate();
-            if (affectedRows > 0) {
-                System.out.println("DAO: Successfully deleted review with ID " + reviewId);
-            } else {
-                System.out.println("DAO: No review found with ID " + reviewId + " to delete.");
-            }
+            pstmt.executeUpdate();
         } catch (SQLException e) {
-            System.err.println("DAO Error: Failed to delete review with ID " + reviewId);
             e.printStackTrace();
         }
     }
@@ -190,22 +158,41 @@ public class ReviewDao {
             pstmt.setInt(1, merchantId);
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
-                    Review review = new Review();
-                    review.setReviewId(rs.getInt("review_id"));
-                    review.setOrderId(rs.getInt("order_id"));
-                    review.setUserId(rs.getInt("user_id"));
-                    review.setRating(rs.getInt("rating"));
-                    review.setComment(rs.getString("comment"));
-                    review.setReviewTime(rs.getTimestamp("review_time"));
-                    review.setUsername(rs.getString("username")); // Set the username
+                    Review review = mapRowToReview(rs);
+                    review.setUsername(rs.getString("username"));
                     reviews.add(review);
                 }
-                System.out.println("DAO: Retrieved " + reviews.size() + " reviews for merchant ID " + merchantId);
             }
         } catch (SQLException e) {
-            System.err.println("DAO Error: Failed to get reviews for merchant ID " + merchantId);
             e.printStackTrace();
         }
         return reviews;
+    }
+
+    public int countUnseenReviewsByMerchant(int merchantId) {
+        String sql = "SELECT COUNT(*) FROM reviews r JOIN orders o ON r.order_id = o.order_id WHERE o.merchant_id = ? AND r.is_seen_by_merchant = FALSE";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, merchantId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    public void markReviewsAsSeenByMerchant(int merchantId) {
+        String sql = "UPDATE reviews r JOIN orders o ON r.order_id = o.order_id SET r.is_seen_by_merchant = TRUE WHERE o.merchant_id = ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, merchantId);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 }

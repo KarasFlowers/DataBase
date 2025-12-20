@@ -8,6 +8,7 @@ public class Merchant {
     private String address;
     private String phoneNumber;
     private BigDecimal rating;
+    private int salesCount;
 
     public Merchant() {}
 
@@ -22,4 +23,6 @@ public class Merchant {
     public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
     public BigDecimal getRating() { return rating; }
     public void setRating(BigDecimal rating) { this.rating = rating; }
+    public int getSalesCount() { return salesCount; }
+    public void setSalesCount(int salesCount) { this.salesCount = salesCount; }
 }

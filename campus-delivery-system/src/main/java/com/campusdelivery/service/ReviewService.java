@@ -32,4 +32,24 @@ public class ReviewService {
     public List<Review> getReviewsByMerchantId(int merchantId) {
         return reviewDao.getReviewsByMerchantId(merchantId);
     }
+
+    public List<Review> getAllReviews() {
+        return reviewDao.getAllReviews();
+    }
+
+    public Review getReviewById(int reviewId) {
+        return reviewDao.getReviewById(reviewId);
+    }
+
+    public void updateReview(Review review) {
+        reviewDao.updateReview(review);
+    }
+
+    public int countUnseenReviewsByMerchant(int merchantId) {
+        return reviewDao.countUnseenReviewsByMerchant(merchantId);
+    }
+
+    public void markReviewsAsSeenByMerchant(int merchantId) {
+        reviewDao.markReviewsAsSeenByMerchant(merchantId);
+    }
 }

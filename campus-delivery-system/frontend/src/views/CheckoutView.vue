@@ -128,7 +128,6 @@ const placeOrder = async () => {
       merchantId: cartStore.state.merchantId,
       addressId: selectedAddressId.value,
       totalPrice: cartStore.total.value,
-      status: 'pending'
     };
     const orderResponse = await axios.post('/api/orders', orderPayload);
     const newOrderId = extractOrderId(orderResponse.data);
@@ -151,9 +150,9 @@ const placeOrder = async () => {
     await Promise.all(detailPromises);
 
     // Step 3: Success
-    alert('下单成功！');
+    alert('下单成功！请前往支付页面完成支付。');
     cartStore.clearCart();
-    router.push('/orders');
+    router.push({ name: 'pay-order', params: { orderId: newOrderId } });
 
   } catch (err) {
     error.value = '下单失败，请重试。';

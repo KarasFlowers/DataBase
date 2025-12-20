@@ -9,6 +9,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,19 +19,28 @@ public class RiderDao {
     @Autowired
     private DataSource dataSource;
 
-    public void addRider(Rider rider) {
+    public int addRider(Rider rider) {
         String sql = "INSERT INTO riders (name, phone_number, status) VALUES (?, ?, ?)";
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+             PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             pstmt.setString(1, rider.getName());
             pstmt.setString(2, rider.getPhoneNumber());
             pstmt.setString(3, rider.getStatus());
-            pstmt.executeUpdate();
-            System.out.println("DAO: Successfully added rider " + rider.getName());
+            
+            int affectedRows = pstmt.executeUpdate();
+            if (affectedRows > 0) {
+                try (ResultSet generatedKeys = pstmt.getGeneratedKeys()) {
+                    if (generatedKeys.next()) {
+                         System.out.println("DAO: Successfully added rider " + rider.getName());
+                        return generatedKeys.getInt(1);
+                    }
+                }
+            }
         } catch (SQLException e) {
             System.err.println("DAO Error: Failed to add rider " + rider.getName());
             e.printStackTrace();
         }
+        return 0;
     }
 
     public Rider getRiderById(int riderId) {

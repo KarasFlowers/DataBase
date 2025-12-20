@@ -37,8 +37,8 @@ public class OrderController {
     }
 
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<Order>> getOrdersByUserId(@PathVariable int userId) {
-        List<Order> orders = orderService.getOrdersByUserId(userId);
+    public ResponseEntity<List<Order>> getOrdersByUserId(@PathVariable int userId, @RequestParam(required = false) Integer merchantId) {
+        List<Order> orders = orderService.getOrdersByUserId(userId, merchantId);
         return new ResponseEntity<>(orders, HttpStatus.OK);
     }
 
@@ -51,10 +51,30 @@ public class OrderController {
         return new ResponseEntity<>(orders, HttpStatus.OK);
     }
 
+    @GetMapping("/user/{userId}/to-review/count")
+    public ResponseEntity<Integer> countUnreviewedCompletedOrders(@PathVariable int userId) {
+        int count = orderService.countUnreviewedCompletedOrders(userId);
+        return new ResponseEntity<>(count, HttpStatus.OK);
+    }
+
+    @GetMapping("/user/{userId}/to-review")
+    public ResponseEntity<List<Order>> getUnreviewedCompletedOrders(@PathVariable int userId) {
+        List<Order> orders = orderService.getUnreviewedCompletedOrders(userId);
+        return new ResponseEntity<>(orders, HttpStatus.OK);
+    }
+
     @GetMapping("/merchant/{merchantId}")
     public ResponseEntity<List<Order>> getOrdersByMerchantId(@PathVariable int merchantId) {
         List<Order> orders = orderService.getOrdersByMerchantId(merchantId);
         return new ResponseEntity<>(orders, HttpStatus.OK);
+    }
+
+    @GetMapping("/merchant/{merchantId}/count")
+    public ResponseEntity<Integer> countOrdersByMerchantIdAndStatus(
+            @PathVariable int merchantId,
+            @RequestParam(required = false) String status) {
+        int count = orderService.countOrdersByMerchantIdAndStatus(merchantId, status);
+        return new ResponseEntity<>(count, HttpStatus.OK);
     }
 
     @GetMapping
@@ -63,9 +83,21 @@ public class OrderController {
         return new ResponseEntity<>(orders, HttpStatus.OK);
     }
 
+    @GetMapping("/available")
+    public ResponseEntity<List<Order>> getAvailableOrders() {
+        List<Order> orders = orderService.getAvailableOrdersForRider();
+        return new ResponseEntity<>(orders, HttpStatus.OK);
+    }
+
     @PutMapping("/{orderId}/status/{status}")
     public ResponseEntity<String> updateOrderStatus(@PathVariable int orderId, @PathVariable String status) {
         orderService.updateOrderStatus(orderId, status);
         return new ResponseEntity<>("Order status updated successfully", HttpStatus.OK);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteOrder(@PathVariable int id) {
+        orderService.deleteOrder(id);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 }

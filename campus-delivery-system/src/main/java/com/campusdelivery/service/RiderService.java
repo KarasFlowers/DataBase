@@ -13,8 +13,8 @@ public class RiderService {
     @Autowired
     private RiderDao riderDao;
 
-    public void addRider(Rider rider) {
-        riderDao.addRider(rider);
+    public int addRider(Rider rider) {
+        return riderDao.addRider(rider);
     }
 
     public Rider getRiderById(int riderId) {

@@ -2,7 +2,14 @@
   <div class="merchant-list">
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h1>商家列表</h1>
-      <router-link v-if="userStore.state.userRole === 'admin'" to="/merchants/add" class="btn btn-primary">添加商家</router-link>
+      <div class="d-flex align-items-center">
+        <select class="form-select me-2" v-model="sortBy">
+          <option value="default">默认排序</option>
+          <option value="rating_desc">评分从高到低</option>
+          <option value="sales_desc">销量从高到低</option>
+        </select>
+        <router-link v-if="userStore.state.userRole === 'admin'" to="/merchants/add" class="btn btn-primary">添加商家</router-link>
+      </div>
     </div>
 
     <div v-if="loading" class="alert alert-info">正在加载...</div>
@@ -12,7 +19,7 @@
       <div v-for="merchant in merchants" :key="merchant.merchantId" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
         <router-link :to="{ name: 'dishes', params: { id: merchant.merchantId } }" class="flex-grow-1 text-decoration-none text-dark">
           <h5>{{ merchant.name }}</h5>
-          <p class="mb-0">{{ merchant.address }} - 评分: {{ merchant.rating }}</p>
+          <p class="mb-0">{{ merchant.address }} - 评分: {{ merchant.rating }} - 销量: {{ merchant.salesCount || 0 }}</p>
         </router-link>
         <div v-if="userStore.state.userRole === 'admin'" class="btn-group" role="group">
           <router-link :to="{ name: 'edit-merchant', params: { id: merchant.merchantId } }" class="btn btn-secondary btn-sm">编辑</router-link>
@@ -28,17 +35,18 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import axios from 'axios';
 import userStore from '../stores/userStore';
 
 const merchants = ref([]);
 const loading = ref(true);
 const error = ref(null);
+const sortBy = ref('default');
 
 const fetchMerchants = async () => {
   try {
-    const response = await axios.get('/api/merchants');
+    const response = await axios.get('/api/merchants', { params: { sortBy: sortBy.value } });
     merchants.value = response.data;
   } catch (err) {
     error.value = '加载商家列表失败，请确认后端服务是否运行。';
@@ -47,6 +55,13 @@ const fetchMerchants = async () => {
 };
 
 onMounted(async () => {
+  loading.value = true;
+  await fetchMerchants();
+  loading.value = false;
+});
+
+// Watch for changes in sortBy and refetch merchants
+watch(sortBy, async () => {
   loading.value = true;
   await fetchMerchants();
   loading.value = false;
@@ -67,7 +82,3 @@ const deleteMerchant = async (merchantId) => {
   }
 };
 </script>
-
-<style scoped>
-/* Add any specific styles for the merchant list here */
-</style>
