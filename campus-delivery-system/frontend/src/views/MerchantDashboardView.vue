@@ -48,6 +48,14 @@
             </div>
           </div>
         </div>
+        <div class="col-md-6 col-lg-3 mb-3">
+          <div class="card h-100 shadow-sm">
+            <div class="card-body">
+              <h5 class="card-title text-muted">人均消费</h5>
+              <p class="card-text fs-3 text-success fw-bold">￥{{ merchantDetails.averageOrderPrice ? merchantDetails.averageOrderPrice.toFixed(2) : '0.00' }}</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Top Selling Dishes Charts -->

@@ -65,7 +65,7 @@ const startMerchantPolling = () => {
     merchantPollingTimer = setInterval(() => {
         fetchNewOrderCount();
         fetchNewReviewCount();
-    }, 30000);
+    }, 10000);
 };
 
 const stopMerchantPolling = () => {
@@ -78,7 +78,7 @@ const stopMerchantPolling = () => {
 const startUserPolling = () => {
     stopUserPolling();
     fetchReviewableOrderCount();
-    userPollingTimer = setInterval(fetchReviewableOrderCount, 30000);
+    userPollingTimer = setInterval(fetchReviewableOrderCount, 10000);
 };
 
 const stopUserPolling = () => {

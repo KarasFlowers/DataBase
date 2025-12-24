@@ -5,10 +5,15 @@
       <router-link v-if="userStore.state.userRole === 'admin'" to="/riders/add" class="btn btn-primary">添加骑手</router-link>
     </div>
 
+    <!-- Search Input -->
+    <div class="mb-3">
+        <input type="text" class="form-control" placeholder="按姓名或手机号搜索..." v-model="searchQuery">
+    </div>
+
     <div v-if="loading" class="alert alert-info">正在加载...</div>
     <div v-if="error" class="alert alert-danger">{{ error }}</div>
 
-    <table v-if="riders.length > 0" class="table table-striped table-hover">
+    <table v-if="filteredRiders.length > 0" class="table table-striped table-hover">
       <thead>
         <tr>
           <th>ID</th>
@@ -19,7 +24,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="rider in riders" :key="rider.riderId">
+        <tr v-for="rider in filteredRiders" :key="rider.riderId">
           <td>{{ rider.riderId }}</td>
           <td>{{ rider.name }}</td>
           <td>{{ rider.phoneNumber }}</td>
@@ -34,14 +39,15 @@
       </tbody>
     </table>
 
-    <div v-if="!loading && riders.length === 0 && !error" class="alert alert-warning">
-      未找到任何骑手。
+    <div v-if="!loading && filteredRiders.length === 0 && !error" class="alert alert-warning">
+      <span v-if="searchQuery">未找到匹配的骑手。</span>
+      <span v-else>未找到任何骑手。</span>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import axios from 'axios';
 import userStore from '../stores/userStore';
 import { useRouter } from 'vue-router';
@@ -50,6 +56,18 @@ const riders = ref([]);
 const loading = ref(true);
 const error = ref(null);
 const router = useRouter();
+const searchQuery = ref('');
+
+const filteredRiders = computed(() => {
+    if (!searchQuery.value) {
+        return riders.value;
+    }
+    const query = searchQuery.value.toLowerCase();
+    return riders.value.filter(rider => 
+        rider.name.toLowerCase().includes(query) ||
+        rider.phoneNumber.includes(query)
+    );
+});
 
 const fetchRiders = async () => {
   loading.value = true;

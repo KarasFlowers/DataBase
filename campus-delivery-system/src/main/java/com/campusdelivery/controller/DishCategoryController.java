@@ -39,6 +39,16 @@ public class DishCategoryController {
         return new ResponseEntity<>("Category updated successfully", HttpStatus.OK);
     }
 
+    @PutMapping("/reorder")
+    public ResponseEntity<String> updateCategoryOrder(@RequestBody List<Integer> categoryIds) {
+        try {
+            dishCategoryService.updateCategoryOrder(categoryIds);
+            return new ResponseEntity<>("Category order updated successfully", HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>("Failed to update category order.", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteCategory(@PathVariable int id) {
         dishCategoryService.deleteCategory(id);

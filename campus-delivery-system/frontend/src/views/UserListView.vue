@@ -5,10 +5,15 @@
       <router-link v-if="userStore.state.userRole === 'admin'" to="/users/add" class="btn btn-primary">添加用户</router-link>
     </div>
 
+    <!-- Search Input -->
+    <div class="mb-3">
+        <input type="text" class="form-control" placeholder="按用户名或手机号搜索..." v-model="searchQuery">
+    </div>
+
     <div v-if="loading" class="alert alert-info">正在加载...</div>
     <div v-if="error" class="alert alert-danger">{{ error }}</div>
 
-    <table v-if="users.length > 0" class="table table-striped table-hover">
+    <table v-if="filteredUsers.length > 0" class="table table-striped table-hover">
       <thead>
         <tr>
           <th>ID</th>
@@ -19,7 +24,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="user in users" :key="user.userId">
+        <tr v-for="user in filteredUsers" :key="user.userId">
           <td>{{ user.userId }}</td>
           <td>{{ user.username }}</td>
           <td>{{ user.phoneNumber }}</td>
@@ -34,14 +39,15 @@
       </tbody>
     </table>
 
-    <div v-if="!loading && users.length === 0 && !error" class="alert alert-warning">
-      未找到任何用户。
+    <div v-if="!loading && filteredUsers.length === 0 && !error" class="alert alert-warning">
+      <span v-if="searchQuery">未找到匹配的用户。</span>
+      <span v-else>列表中没有普通用户。</span>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import axios from 'axios';
 import userStore from '../stores/userStore';
 import { useRouter } from 'vue-router';
@@ -50,6 +56,18 @@ const users = ref([]);
 const loading = ref(true);
 const error = ref(null);
 const router = useRouter();
+const searchQuery = ref('');
+
+const filteredUsers = computed(() => {
+    if (!searchQuery.value) {
+        return users.value;
+    }
+    const query = searchQuery.value.toLowerCase();
+    return users.value.filter(user => 
+        user.username.toLowerCase().includes(query) ||
+        user.phoneNumber.includes(query)
+    );
+});
 
 const fetchUsers = async () => {
   loading.value = true;

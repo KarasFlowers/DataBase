@@ -4,6 +4,7 @@ public class DishCategory {
     private int categoryId;
     private int merchantId;
     private String categoryName;
+    private int displayOrder;
 
     public DishCategory() {}
 
@@ -30,5 +31,13 @@ public class DishCategory {
 
     public void setCategoryName(String categoryName) {
         this.categoryName = categoryName;
+    }
+
+    public int getDisplayOrder() {
+        return displayOrder;
+    }
+
+    public void setDisplayOrder(int displayOrder) {
+        this.displayOrder = displayOrder;
     }
 }

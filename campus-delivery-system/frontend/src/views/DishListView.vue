@@ -6,13 +6,21 @@
     <div v-if="merchant">
       <div class="d-flex justify-content-between align-items-center mb-3">
         <div>
-          <h1>{{ merchant.name }} 的菜品</h1>
-          <p class="mb-0">地址: {{ merchant.address }} | 评分: {{ merchant.rating }}</p>
+          <h1 class="d-inline-block me-3">{{ merchant.name }}</h1>
+          <span class="badge fs-5" :class="merchant.open ? 'bg-success' : 'bg-secondary'">
+              {{ merchant.open ? '营业中' : '已打烊' }}
+          </span>
+          <p class="mb-0 text-muted">地址: {{ merchant.address }} | 评分: {{ merchant.rating }}</p>
         </div>
         <div class="btn-group" v-if="userStore.state.userRole === 'admin' || (userStore.state.userRole === 'merchant' && userStore.state.merchantId === merchant.merchantId)">
+            <router-link :to="{ name: 'edit-merchant', params: { id: merchant.merchantId } }" class="btn btn-success">店铺设置</router-link>
             <router-link :to="{ name: 'category-management' }" class="btn btn-info">管理分区</router-link>
             <router-link :to="{ name: 'add-dish', params: { merchantId: merchant.merchantId } }" class="btn btn-primary">添加菜品</router-link>
         </div>
+      </div>
+
+      <div v-if="!merchant.open" class="alert alert-warning text-center">
+          <h5>本店已打烊，暂不接单。</h5>
       </div>
 
       <div v-if="dishes.length > 0">
@@ -39,7 +47,7 @@
                                     </div>
                                 </div>
                                 <div v-if="userStore.state.userRole === 'user'">
-                                    <button @click="handleAddToCart(dish)" class="btn btn-primary btn-sm" :disabled="!dish.available">
+                                    <button @click="handleAddToCart(dish)" class="btn btn-primary btn-sm" :disabled="!dish.available || !merchant.open">
                                         加入购物车
                                     </button>
                                 </div>
@@ -123,7 +131,12 @@ const fetchDataForMerchant = async (merchantId) => {
 };
 
 const handleAddToCart = (dish) => {
-  if (!dish.available) return;
+  if (!dish.available || !merchant.value.open) {
+      if (!merchant.value.open) {
+          alert('商家已打烊，无法添加商品。');
+      }
+      return;
+  }
   cartStore.addToCart(dish, merchant.value);
   alert(`“${dish.name}” 已加入您的购物车。`);
 };
@@ -145,7 +158,7 @@ const deleteDish = async (dishId) => {
       await fetchDataForMerchant(route.params.id);
     } catch (err) {
       alert('删除菜品失败。');
-      console.error(err);
+      console.error('Error deleting dish:', err);
     }
   }
 };

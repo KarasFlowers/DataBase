@@ -122,6 +122,14 @@ const placeOrder = async () => {
   error.value = null;
 
   try {
+    // Step 0: Pre-flight check to see if merchant is still open
+    const merchantRes = await axios.get(`/api/merchants/${cartStore.state.merchantId}`);
+    if (!merchantRes.data.open) {
+        alert('抱歉，商家刚刚打烊，无法下单。');
+        router.push('/'); // Redirect to merchant list
+        return;
+    }
+
     // Step 1: Create the main order
     const orderPayload = {
       userId: userStore.state.userId,
@@ -155,7 +163,11 @@ const placeOrder = async () => {
     router.push({ name: 'pay-order', params: { orderId: newOrderId } });
 
   } catch (err) {
-    error.value = '下单失败，请重试。';
+    if (err.response && err.response.data) {
+        error.value = `下单失败: ${err.response.data}`;
+    } else {
+        error.value = '下单失败，请重试。';
+    }
     console.error('Error placing order:', err);
   } finally {
     isPlacingOrder.value = false;
