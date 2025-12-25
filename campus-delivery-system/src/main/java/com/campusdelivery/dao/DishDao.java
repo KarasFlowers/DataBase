@@ -20,7 +20,7 @@ public class DishDao {
     private DataSource dataSource;
 
     public void addDish(Dish dish) {
-        String sql = "INSERT INTO dishes (merchant_id, name, description, price, is_available, category_id) VALUES (?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO dishes (merchant_id, name, description, price, is_available, category_id, purchase_limit) VALUES (?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, dish.getMerchantId());
@@ -28,13 +28,9 @@ public class DishDao {
             pstmt.setString(3, dish.getDescription());
             pstmt.setBigDecimal(4, dish.getPrice());
             pstmt.setBoolean(5, dish.isAvailable());
-            if (dish.getCategoryId() != null) {
-                pstmt.setInt(6, dish.getCategoryId());
-            } else {
-                pstmt.setNull(6, Types.INTEGER);
-            }
+            pstmt.setObject(6, dish.getCategoryId(), Types.INTEGER);
+            pstmt.setObject(7, dish.getPurchaseLimit(), Types.INTEGER);
             pstmt.executeUpdate();
-            System.out.println("DAO: Successfully added dish " + dish.getName() + " for merchant ID " + dish.getMerchantId());
         } catch (SQLException e) {
             System.err.println("DAO Error: Failed to add dish " + dish.getName());
             e.printStackTrace();
@@ -49,7 +45,18 @@ public class DishDao {
         dish.setDescription(rs.getString("description"));
         dish.setPrice(rs.getBigDecimal("price"));
         dish.setAvailable(rs.getBoolean("is_available"));
-        dish.setCategoryId((Integer) rs.getObject("category_id"));
+
+        // Safely handle numeric type conversion from DB (can be Long or Integer)
+        Object categoryIdObj = rs.getObject("category_id");
+        if (categoryIdObj != null) {
+            dish.setCategoryId(((Number) categoryIdObj).intValue());
+        }
+
+        Object purchaseLimitObj = rs.getObject("purchase_limit");
+        if (purchaseLimitObj != null) {
+            dish.setPurchaseLimit(((Number) purchaseLimitObj).intValue());
+        }
+        
         return dish;
     }
 
@@ -60,14 +67,10 @@ public class DishDao {
             pstmt.setInt(1, dishId);
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
-                    System.out.println("DAO: Found dish by ID " + dishId);
                     return mapRowToDish(rs);
-                } else {
-                    System.out.println("DAO: No dish found with ID " + dishId);
                 }
             }
         } catch (SQLException e) {
-            System.err.println("DAO Error: Failed to get dish by ID " + dishId);
             e.printStackTrace();
         }
         return null;
@@ -82,9 +85,7 @@ public class DishDao {
             while (rs.next()) {
                 dishes.add(mapRowToDish(rs));
             }
-            System.out.println("DAO: Retrieved " + dishes.size() + " dishes.");
         } catch (SQLException e) {
-            System.err.println("DAO Error: Failed to get all dishes.");
             e.printStackTrace();
         }
         return dishes;
@@ -100,35 +101,25 @@ public class DishDao {
                 while (rs.next()) {
                     dishes.add(mapRowToDish(rs));
                 }
-                System.out.println("DAO: Retrieved " + dishes.size() + " dishes for merchant ID " + merchantId);
             }
         } catch (SQLException e) {
-            System.err.println("DAO Error: Failed to get dishes for merchant ID " + merchantId);
             e.printStackTrace();
         }
         return dishes;
     }
 
     public void updateDish(Dish dish) {
-        String sql = "UPDATE dishes SET name = ?, description = ?, price = ?, is_available = ?, category_id = ? WHERE dish_id = ?";
+        String sql = "UPDATE dishes SET name = ?, description = ?, price = ?, is_available = ?, category_id = ?, purchase_limit = ? WHERE dish_id = ?";
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, dish.getName());
             pstmt.setString(2, dish.getDescription());
             pstmt.setBigDecimal(3, dish.getPrice());
             pstmt.setBoolean(4, dish.isAvailable());
-            if (dish.getCategoryId() != null) {
-                pstmt.setInt(5, dish.getCategoryId());
-            } else {
-                pstmt.setNull(5, Types.INTEGER);
-            }
-            pstmt.setInt(6, dish.getDishId());
-            int affectedRows = pstmt.executeUpdate();
-            if (affectedRows > 0) {
-                System.out.println("DAO: Successfully updated dish " + dish.getName());
-            } else {
-                System.out.println("DAO: No dish found with ID " + dish.getDishId() + " to update.");
-            }
+            pstmt.setObject(5, dish.getCategoryId(), Types.INTEGER);
+            pstmt.setObject(6, dish.getPurchaseLimit(), Types.INTEGER);
+            pstmt.setInt(7, dish.getDishId());
+            pstmt.executeUpdate();
         } catch (SQLException e) {
             System.err.println("DAO Error: Failed to update dish " + dish.getName());
             e.printStackTrace();
@@ -140,14 +131,8 @@ public class DishDao {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, dishId);
-            int affectedRows = pstmt.executeUpdate();
-            if (affectedRows > 0) {
-                System.out.println("DAO: Successfully deleted dish with ID " + dishId);
-            } else {
-                System.out.println("DAO: No dish found with ID " + dishId + " to delete.");
-            }
+            pstmt.executeUpdate();
         } catch (SQLException e) {
-            System.err.println("DAO Error: Failed to delete dish with ID " + dishId);
             e.printStackTrace();
         }
     }

@@ -23,6 +23,10 @@
             </option>
         </select>
       </div>
+      <div class="mb-3">
+        <label for="purchaseLimit" class="form-label">每单限购数量</label>
+        <input type="number" min="1" class="form-control" id="purchaseLimit" v-model.number="dish.purchaseLimit" placeholder="留空则不限购">
+      </div>
       <div class="mb-3 form-check">
         <input type="checkbox" class="form-check-input" id="isAvailable" v-model="dish.available">
         <label class="form-check-label" for="isAvailable">可购买</label>
@@ -57,6 +61,7 @@ const dish = ref({
   available: true,
   merchantId: parseInt(props.merchantId),
   categoryId: null,
+  purchaseLimit: null
 });
 
 const error = ref(null);

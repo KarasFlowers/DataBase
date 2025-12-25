@@ -17,10 +17,10 @@ const total = computed(() => {
 });
 
 // Function to add a dish to the cart
-const addToCart = (dish, merchant) => {
+const addToCart = (dish, merchant, quantity = 1) => {
   // If the new item is from a different merchant, clear the cart first
   if (state.merchantId !== null && state.merchantId !== merchant.merchantId) {
-    if (!confirm(`You have items from ${state.merchantName}. Do you want to clear the cart and add items from ${merchant.name}?`)) {
+    if (!confirm(`您当前购物车中有来自 “${state.merchantName}” 的商品。要清空购物车并添加来自 “${merchant.name}” 的新商品吗？`)) {
       return; // User cancelled
     }
     clearCart();
@@ -34,9 +34,9 @@ const addToCart = (dish, merchant) => {
   
   const existingItem = findItem(dish.dishId);
   if (existingItem) {
-    existingItem.quantity++;
+    existingItem.quantity += quantity;
   } else {
-    state.items.push({ dish: { ...dish }, quantity: 1 });
+    state.items.push({ dish: { ...dish }, quantity: quantity });
   }
 };
 
@@ -75,6 +75,7 @@ const clearCart = () => {
 export default {
   state,
   total,
+  findItem, // Expose the findItem helper
   addToCart,
   removeFromCart,
   updateQuantity,

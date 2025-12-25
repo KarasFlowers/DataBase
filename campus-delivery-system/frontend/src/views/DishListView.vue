@@ -35,10 +35,15 @@
                                 <span class="text-primary fs-5 fw-bold">¥{{ dish.price }}</span>
                             </div>
                             <p class="card-text text-muted flex-grow-1">{{ dish.description }}</p>
-                            <div class="d-flex justify-content-between align-items-center mt-2">
-                                <span class="badge" :class="dish.available ? 'bg-success' : 'bg-danger'">
-                                {{ dish.available ? '在售' : '售罄' }}
-                                </span>
+                            <div class="d-flex justify-content-between align-items-center mt-2 gap-2">
+                                <div class="d-flex align-items-center"> <!-- New div to group badges -->
+                                    <span class="badge" :class="dish.available ? 'bg-success' : 'bg-danger'">
+                                    {{ dish.available ? '在售' : '售罄' }}
+                                    </span>
+                                    <span v-if="dish.purchaseLimit && dish.purchaseLimit > 0" class="badge bg-info ms-1">
+                                        限购 {{ dish.purchaseLimit }} 件
+                                    </span>
+                                </div>
                                 <!-- Action Buttons -->
                                 <div v-if="userStore.state.userRole === 'admin' || (userStore.state.userRole === 'merchant' && userStore.state.merchantId === merchant.merchantId)">
                                     <div class="btn-group" role="group">
@@ -46,10 +51,18 @@
                                         <button @click="deleteDish(dish.dishId)" class="btn btn-danger btn-sm">删除</button>
                                     </div>
                                 </div>
+                                <!-- Customer Add-to-cart controls -->
                                 <div v-if="userStore.state.userRole === 'user'">
-                                    <button @click="handleAddToCart(dish)" class="btn btn-primary btn-sm" :disabled="!dish.available || !merchant.open">
-                                        加入购物车
-                                    </button>
+                                    <div v-if="getQuantityInCart(dish.dishId) === 0">
+                                        <button @click="handleInitialAddToCart(dish)" class="btn btn-primary btn-sm" :disabled="!dish.available || !merchant.open">
+                                            加入购物车
+                                        </button>
+                                    </div>
+                                    <div v-else class="quantity-selector-compact">
+                                        <button @click="decrementInCart(dish)" class="btn btn-outline-secondary btn-sm" :disabled="!dish.available || !merchant.open">-</button>
+                                        <span class="quantity-text">{{ getQuantityInCart(dish.dishId) }}</span>
+                                        <button @click="incrementInCart(dish)" class="btn btn-outline-secondary btn-sm" :disabled="!dish.available || !merchant.open || (dish.purchaseLimit && getQuantityInCart(dish.dishId) >= dish.purchaseLimit)">+</button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -121,7 +134,6 @@ const fetchDataForMerchant = async (merchantId) => {
     merchant.value = merchantRes.data;
     dishes.value = dishesRes.data;
     categories.value = categoriesRes.data;
-
   } catch (err) {
     error.value = '加载数据失败，请确认后端服务是否运行以及商家ID是否正确。';
     console.error('Error fetching data:', err);
@@ -130,15 +142,36 @@ const fetchDataForMerchant = async (merchantId) => {
   }
 };
 
-const handleAddToCart = (dish) => {
+const getQuantityInCart = (dishId) => {
+    const item = cartStore.findItem(dishId);
+    return item ? item.quantity : 0;
+};
+
+const handleInitialAddToCart = (dish) => {
   if (!dish.available || !merchant.value.open) {
-      if (!merchant.value.open) {
-          alert('商家已打烊，无法添加商品。');
-      }
+      if (!merchant.value.open) alert('商家已打烊，无法添加商品。');
       return;
   }
-  cartStore.addToCart(dish, merchant.value);
-  alert(`“${dish.name}” 已加入您的购物车。`);
+  // Check purchase limit for the very first item
+  if (dish.purchaseLimit && 1 > dish.purchaseLimit) {
+      alert(`抱歉，该商品每单限购 ${dish.purchaseLimit} 件。`);
+      return;
+  }
+  cartStore.addToCart(dish, merchant.value, 1);
+};
+
+const incrementInCart = (dish) => {
+    const currentQuantity = getQuantityInCart(dish.dishId);
+    if (dish.purchaseLimit && currentQuantity + 1 > dish.purchaseLimit) {
+        alert(`抱歉，该商品每单限购 ${dish.purchaseLimit} 件。`);
+        return;
+    }
+    cartStore.updateQuantity(dish.dishId, currentQuantity + 1);
+};
+
+const decrementInCart = (dish) => {
+    const currentQuantity = getQuantityInCart(dish.dishId);
+    cartStore.updateQuantity(dish.dishId, currentQuantity - 1); // store handles removal if quantity is 0
 };
 
 onMounted(() => {
@@ -169,6 +202,15 @@ const goBack = () => {
 </script>
 
 <style scoped>
+.quantity-selector-compact {
+    display: flex;
+    align-items: center;
+}
+.quantity-selector-compact .quantity-text {
+    width: 30px;
+    text-align: center;
+    font-weight: bold;
+}
 p {
   margin-bottom: 0.5rem;
 }

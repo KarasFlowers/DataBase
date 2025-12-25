@@ -10,6 +10,7 @@ public class Dish {
     private BigDecimal price;
     private boolean available;
     private Integer categoryId;
+    private Integer purchaseLimit;
 
     public Dish() {}
 
@@ -28,4 +29,6 @@ public class Dish {
     public void setAvailable(boolean available) { this.available = available; }
     public Integer getCategoryId() { return categoryId; }
     public void setCategoryId(Integer categoryId) { this.categoryId = categoryId; }
+    public Integer getPurchaseLimit() { return purchaseLimit; }
+    public void setPurchaseLimit(Integer purchaseLimit) { this.purchaseLimit = purchaseLimit; }
 }

@@ -18,9 +18,9 @@
             </div>
             <div class="d-flex align-items-center">
               <div class="input-group input-group-sm" style="width: 120px;">
-                <button class="btn btn-outline-secondary" type="button" @click="updateQuantity(item.dish.dishId, item.quantity - 1)">-</button>
+                <button class="btn btn-outline-secondary" type="button" @click="decrement(item.dish.dishId, item.quantity - 1)">-</button>
                 <input type="text" class="form-control text-center" :value="item.quantity" readonly>
-                <button class="btn btn-outline-secondary" type="button" @click="updateQuantity(item.dish.dishId, item.quantity + 1)">+</button>
+                <button class="btn btn-outline-secondary" type="button" @click="increment(item, item.quantity + 1)" :disabled="item.dish.purchaseLimit && item.quantity >= item.dish.purchaseLimit">+</button>
               </div>
               <button @click="removeFromCart(item.dish.dishId)" class="btn btn-danger btn-sm ms-3">移除</button>
             </div>
@@ -32,7 +32,7 @@
       </div>
       <div class="d-flex justify-content-between">
         <button @click="clearCart" class="btn btn-outline-danger">清空购物车</button>
-        <button @click="goToCheckout" class="btn btn-primary">去结算</button>
+        <router-link to="/checkout" class="btn btn-success btn-lg">去结算</router-link>
       </div>
     </div>
   </div>
@@ -44,8 +44,16 @@ import cartStore from '../stores/cartStore';
 
 const router = useRouter();
 
-const updateQuantity = (dishId, newQuantity) => {
+const decrement = (dishId, newQuantity) => {
   cartStore.updateQuantity(dishId, newQuantity);
+};
+
+const increment = (item, newQuantity) => {
+    if (item.dish.purchaseLimit && newQuantity > item.dish.purchaseLimit) {
+        alert(`抱歉，该商品每单限购 ${item.dish.purchaseLimit} 件。`);
+        return;
+    }
+    cartStore.updateQuantity(item.dish.dishId, newQuantity);
 };
 
 const removeFromCart = (dishId) => {
@@ -60,9 +68,6 @@ const clearCart = () => {
     }
 }
 
-const goToCheckout = () => {
-  router.push('/checkout');
-};
 </script>
 
 <style scoped>

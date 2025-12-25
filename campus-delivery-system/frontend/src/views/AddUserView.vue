@@ -8,7 +8,7 @@
       </div>
       <div class="mb-3">
         <label for="password" class="form-label">密码</label>
-        <input type="password" class="form-control" id="password" v-model="user.passwordHash" required>
+        <input type="password" class="form-control" id="password" v-model="user.password" required>
         <div class="form-text">注意: 理论上密码要哈希保存，但是这里先直接保存</div>
       </div>
       <div class="mb-3">
@@ -31,7 +31,7 @@ import userStore from '../stores/userStore';
 const router = useRouter();
 const user = ref({
   username: '',
-  passwordHash: '',
+  password: '', // Changed from passwordHash
   phoneNumber: ''
 });
 const error = ref(null);
@@ -44,10 +44,18 @@ onMounted(() => {
 
 const addUser = async () => {
   try {
-    await axios.post('/api/users', user.value);
+    const payload = {
+      ...user.value,
+      role: 'user' // Explicitly set the role
+    };
+    await axios.post('/api/auth/register', payload);
     router.push('/users');
   } catch (err) {
-    error.value = '添加用户失败，请检查数据后重试。';
+    if (err.response && err.response.data) {
+        error.value = `添加用户失败: ${err.response.data}`;
+    } else {
+        error.value = '添加用户失败，请检查数据后重试。';
+    }
     console.error('Error adding user:', err);
   }
 };

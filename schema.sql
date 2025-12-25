@@ -66,6 +66,7 @@ CREATE TABLE dishes (
     price DECIMAL(10, 2) NOT NULL,
     category_id INT NULL,
     is_available BOOLEAN DEFAULT TRUE,
+    purchase_limit INT NULL DEFAULT NULL,
     FOREIGN KEY (merchant_id) REFERENCES merchants(merchant_id) ON DELETE CASCADE,
     FOREIGN KEY (category_id) REFERENCES dish_categories(category_id) ON DELETE SET NULL,
     INDEX(name)
@@ -141,10 +142,11 @@ BEGIN
     FROM orders
     WHERE merchant_id = p_merchant_id AND status = 'completed';
 
-    -- Calculate total sales count from completed orders
-    SELECT COUNT(*) INTO total_sales
-    FROM orders
-    WHERE merchant_id = p_merchant_id AND status = 'completed';
+    -- Calculate total sales count from completed order details
+    SELECT COALESCE(SUM(od.quantity), 0) INTO total_sales
+    FROM order_details od
+    JOIN orders o ON od.order_id = o.order_id
+    WHERE o.merchant_id = p_merchant_id AND o.status = 'completed';
 
     -- Update the merchants table with the new statistics
     UPDATE merchants
